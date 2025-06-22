@@ -92,11 +92,6 @@ export async function POST(req) {
 }
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const client = await clientPromise;
     const db = client.db("dealsDB");
@@ -104,6 +99,7 @@ export async function GET() {
 
     const now = new Date().toISOString();
 
+    // Optionally delete expired offers
     await collection.deleteMany({ expiryDate: { $lte: now } });
 
     const offers = await collection.find().sort({ createdAt: -1 }).toArray();
@@ -115,3 +111,4 @@ export async function GET() {
     return NextResponse.json([], { status: 500 });
   }
 }
+
