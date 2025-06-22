@@ -74,7 +74,7 @@ export async function POST(req) {
       ...body,
       id: newId,
       createdAt: new Date().toISOString(),
-      createdBy: session.user?.email || "admin",
+      createdBy: "admin",
       city: body.city || "Indore",
     };
 
