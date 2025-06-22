@@ -7,11 +7,11 @@ import { authOptions } from "../../../lib/authOptions";
 export async function POST(req) {
   console.log("✅ POST /api/save-offers hit!");
 
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-  console.log("🧩 Session:", session?.user?.email);
+  // const session = await getServerSession(authOptions);
+  // if (!session) {
+  //   return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  // }
+  // console.log("🧩 Session:", session?.user?.email);
 
   try {
     const body = await req.json();
