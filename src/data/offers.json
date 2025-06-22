@@ -1,0 +1,174 @@
+[
+  {
+    "id": 32,
+    "title": "Book 50% - New_New - Neeraj",
+    "description": "Book - NA",
+    "image": "book.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Books",
+    "expiryDate": "2025-06-20",
+    "createdAt": "2025-06-17T16:59:37.163Z"
+  },
+  {
+    "id": 31,
+    "title": "Burger - 600% - New",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Pizza+Point",
+    "category": "Food",
+    "expiryDate": "2025-06-20",
+    "createdAt": "2025-06-17T12:27:35.247Z"
+  },
+  {
+    "id": 30,
+    "title": "Burger - 100%",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Pizza+Point",
+    "category": "Food",
+    "expiryDate": "2025-06-18",
+    "createdAt": "2025-06-17T12:15:29.861Z"
+  },
+  {
+    "id": 29,
+    "title": "600% Off Food_Food",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Shoe+Store",
+    "category": "Food",
+    "expiryDate": "2025-06-30",
+    "createdAt": "2025-06-17T12:09:03.346Z"
+  },
+  {
+    "id": 28,
+    "title": "50% Off Food",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Shoe+Store",
+    "category": "Food",
+    "createdAt": "2025-06-17T12:08:01.956Z"
+  },
+  {
+    "id": 27,
+    "title": "50% - foods",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Pizza+Point",
+    "category": "Food",
+    "createdAt": "2025-06-17T10:07:45.941Z"
+  },
+  {
+    "id": 26,
+    "title": "Burger - 100%",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Pizza+Point",
+    "category": "Food",
+    "createdAt": "2025-06-17T10:06:13.306Z"
+  },
+  {
+    "id": 5,
+    "title": "50% Off",
+    "description": "Take advantage of 30% off on shoes at the Indore Shoe Store.",
+    "image": "fashion.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Shoe+Store",
+    "category": "Fashion",
+    "createdAt": "2025-06-17T11:39:04.958Z"
+  },
+  {
+    "id": 7,
+    "title": "15% Off on Home Appliances",
+    "category": "Home Appliances",
+    "description": "Save 15% on home appliances at the Indore Home Appliances Store.",
+    "image": "Home Appliances.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Home+Appliances+Store"
+  },
+  {
+    "id": 9,
+    "title": "Neeraj Classes",
+    "description": "50% OFF on Each Seat!",
+    "image": "education.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Education"
+  },
+  {
+    "id": 14,
+    "title": "Fan Offer New New",
+    "description": "OFF",
+    "image": "Home Appliances.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Electronics"
+  },
+  {
+    "id": 15,
+    "title": "Burger",
+    "description": "50% OFF",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Food"
+  },
+  {
+    "id": 16,
+    "title": "Burger",
+    "description": "50% OFF",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Food"
+  },
+  {
+    "id": 17,
+    "title": "Flat 50% on Jeans",
+    "description": "50% OFF!",
+    "image": "book.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Books"
+  },
+  {
+    "id": 20,
+    "title": "50% - foods",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Grocery+Mart",
+    "category": "Food"
+  },
+  {
+    "id": 21,
+    "title": "Buy 2 Get 1 Free on Groceries - New",
+    "description": "NA",
+    "image": "groceries.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Grocery+Mart",
+    "category": "Groceries"
+  },
+  {
+    "id": 22,
+    "title": "Food Offer - 21",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Food"
+  },
+  {
+    "id": 23,
+    "title": "Food Offer - 30",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Fashion+Store",
+    "category": "Food"
+  },
+  {
+    "id": 24,
+    "title": "Buy 1 Get 1 Pizza - New",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Pizza+Point",
+    "category": "Food"
+  },
+  {
+    "id": 25,
+    "title": "50% - foods",
+    "description": "NA",
+    "image": "pizza1.png",
+    "mapLink": "https://maps.google.com/?q=Indore+Grocery+Mart",
+    "category": "Food"
+  }
+]
