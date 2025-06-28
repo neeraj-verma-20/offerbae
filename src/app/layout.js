@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Dealzo – Just grab it!",
+  title: "Offerbae – Just grab it!",
   description: "Discover exclusive offers in Indore from malls, shops, and more!",
 };
 

@@ -67,7 +67,7 @@ export default function HomePage() {
         {/* 🌟 Hero */}
         <section className="text-center mb-14 px-2">
           <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-purple-600 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm animate-fadeIn">
-            💥 Dealzo 💥
+            💥 OfferBae 💥
           </h1>
           <p className="mt-4 text-gray-700 text-base md:text-lg max-w-2xl mx-auto font-medium leading-relaxed">
             Where vibes meet value 💸 | Curated local deals for GenZ like you 💜
@@ -225,7 +225,7 @@ export default function HomePage() {
         )}
       </main>
       <a
-        href="https://wa.me/918770326893?text=Hi%2C%20I%20want%20to%20promote%20my%20business%20on%20Dealzo%21%20Please%20share%20the%20details."
+        href="https://wa.me/918770326893?text=Hi%2C%20I%20want%20to%20promote%20my%20business%20on%20Offerbae%21%20Please%20share%20the%20details."
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-indigo-500 to-purple-600 text-white
