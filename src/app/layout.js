@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "Offerbae – Just grab it!",
-  description: "Discover exclusive offers in Indore from malls, shops, and more!",
+  description: "Discover exclusive offers from top malls and shops in Indore, Bhopal, Ujjain, and cities all over India!",
 };
 
 export default function RootLayout({ children }) {
