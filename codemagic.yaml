@@ -3,6 +3,8 @@ workflows:
     name: Android Build
     max_build_duration: 60
     environment:
+      groups:
+        - next-env
       vars:
         NODE_VERSION: 18.16.0
     scripts:
