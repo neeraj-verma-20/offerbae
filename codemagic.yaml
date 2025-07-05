@@ -11,9 +11,9 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
-      - name: Sync Capacitor
+      - name: Update Capacitor
         script: |
-          npx cap sync android
+          npx cap update android
       - name: Build Android APK
         script: |
           cd android
