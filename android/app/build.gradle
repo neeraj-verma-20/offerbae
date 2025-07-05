@@ -21,6 +21,7 @@ android {
         }
     }
     compileOptions {
+        // Use Java 17 explicitly
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
