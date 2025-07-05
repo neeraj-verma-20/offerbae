@@ -1,10 +1,4 @@
 include ':app'
+include ':capacitor-android'
 
-// ✅ Remove capacitor-android since you're using it from Maven now
-// include ':capacitor-android'
-
-// ✅ If you're not using Cordova plugins, you can leave these commented or remove
-// include ':capacitor-cordova-android-plugins'
-// project(':capacitor-cordova-android-plugins').projectDir = new File('./capacitor-cordova-android-plugins/')
-
-// ✅ Only include this if you actually have a `capacitor.settings.gradle` file and need it (usually optional)
+project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
