@@ -17,6 +17,10 @@ workflows:
       - name: Update Capacitor
         script: |
           npx cap update android
+      - name: Make gradlew executable
+        script: |
+          cd android
+          chmod +x gradlew
       - name: Build Android APK
         script: |
           cd android
