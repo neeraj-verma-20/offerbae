@@ -11,29 +11,22 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
-
-      - name: Sync Capacitor
+      - name: Create Android assets folder
         script: |
-          npx cap sync android
-
+          mkdir -p android/app/src/main/assets
+      - name: Update Capacitor
+        script: |
+          npx cap update android
       - name: Make gradlew executable
         script: |
           cd android
           chmod +x gradlew
-
-      - name: Clean Android build
-        script: |
-          cd android
-          ./gradlew clean
-
       - name: Build Android APK
         script: |
           cd android
           ./gradlew assembleDebug
-
     artifacts:
       - android/app/build/outputs/**/*.apk
-
     publishing:
       email:
         recipients:
