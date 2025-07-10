@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Providers from "./providers"; // ✅ Import the client-side wrapper
+import Providers from "./providers";
+import Header from "./components/Header"; // ✅ Import your Header component
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -21,7 +22,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>{children}</Providers> {/* ✅ Now wrapped properly */}
+        <Providers>
+          <Header /> {/* ✅ This will show header on every page */}
+          {children}
+        </Providers>
       </body>
     </html>
   );

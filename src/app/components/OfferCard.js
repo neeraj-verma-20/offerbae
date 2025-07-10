@@ -26,7 +26,7 @@ export default function OfferCard({
       : text;
   };
 
-  return (
+  const CardContent = (
     <div
       className={`bg-white/60 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-md overflow-hidden transition-all duration-300 group hover:scale-[1.025] hover:shadow-2xl ${
         typeof daysLeft === "number" && daysLeft <= 5 ? "glow-red" : ""
@@ -69,7 +69,7 @@ export default function OfferCard({
           {title}
         </h2>
         {description && (
-          <p className="text-sm text-gray-600">{description.trim()}</p>
+          <p className="text-sm text-gray-600">{truncateDescription(description)}</p>
         )}
 
         {/* Bottom Row */}
@@ -92,14 +92,9 @@ export default function OfferCard({
             </div>
           )}
           {mapLink && (
-            <Link
-              href={mapLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-indigo-600 hover:text-indigo-800 font-medium"
-            >
+            <span className="flex items-center gap-1 text-indigo-600 font-medium">
               📍 Map
-            </Link>
+            </span>
           )}
         </div>
       </div>
@@ -124,5 +119,18 @@ export default function OfferCard({
         }
       `}</style>
     </div>
+  );
+
+  return mapLink ? (
+    <Link
+      href={mapLink}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block"
+    >
+      {CardContent}
+    </Link>
+  ) : (
+    <div>{CardContent}</div>
   );
 }

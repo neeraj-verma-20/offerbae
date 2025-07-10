@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import OfferCard from "./components/OfferCard";
+import Header from "./components/Header";
 
 const pageSize = 6;
 
@@ -19,6 +20,8 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCity, setSelectedCity] = useState("All");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const categoryDropdownRef = useRef(null);
 
   useEffect(() => {
     const fetchOffers = async () => {
@@ -44,6 +47,16 @@ export default function HomePage() {
     fetchOffers();
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const allCategories = ["All", ...new Set(offers.map((o) => o.category))];
 
   const filteredOffers = offers.filter((offer) => {
@@ -61,47 +74,40 @@ export default function HomePage() {
 
   const top3NewIds = offers.slice(0, 3).map((o) => o.id);
 
+  // Derive unique cities from offers
+  const cities = [
+    "All",
+    ...Array.from(new Set(offers.map((o) => o.city || "Unknown")))
+  ];
+
   return (
     <div>
-      <main className="min-h-screen bg-gradient-to-br from-[#f5f7fa] via-purple-50 to-[#e0f7fa] px-4 py-12 font-sans">
+      <Header
+        cities={cities}
+        selectedCity={selectedCity}
+        onCityChange={(e) => {
+          setSelectedCity(e.target.value);
+          setCurrentPage(1);
+        }}
+      />
+      <main className="pt-28 min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-indigo-200 px-4 py-12 font-sans">
         {/* 🌟 Hero */}
-        <section className="text-center mb-14 px-2">
-          <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-purple-600 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm animate-fadeIn">
-            💥 OfferBae 💥
+        {/* <section className="text-center mb-14 px-2">
+          <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-500 to-fuchsia-500 bg-clip-text text-transparent drop-shadow-lg animate-fadeIn">
+            Discover Local Deals, <br className="hidden md:inline" /> Curated
+            for You ✨
           </h1>
-          <p className="mt-4 text-gray-700 text-base md:text-lg max-w-2xl mx-auto font-medium leading-relaxed">
-            Where vibes meet value 💸 | Curated local deals for GenZ like you 💜
+          <p className="mt-4 text-gray-700 text-base md:text-lg max-w-3xl mx-auto font-medium leading-relaxed">
+            Explore exclusive offers from cafes, gyms, boutiques, and more — all
+            handpicked for the trendsetters of Indore and beyond. Unlock value,
+            support local, and live your best life 💜
           </p>
-        </section>
+        </section> */}
 
         {/* 🧩 Filters Section - Clean & Compact */}
         <section className="max-w-7xl mx-auto px-4 mb-12">
           <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
-            {/* 🌍 City Filter */}
-            <div className="w-full max-w-xs">
-              <select
-                id="cityFilter"
-                value={selectedCity}
-                onChange={(e) => {
-                  setSelectedCity(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full border border-gray-300 rounded-full py-2 px-4 text-sm font-medium text-gray-700 bg-white shadow-sm hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
-              >
-                <option disabled value="All">
-                  🌍 Filter by City
-                </option>
-                {[
-                  "All",
-                  ...new Set(offers.map((o) => o.city || "Unknown")),
-                ].map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            </div>
-
+            {/* 🌍 City Filter - moved to Header */}
             {/* 📂 Category Filter */}
             <div className="w-full md:flex-1">
               <div className="flex flex-wrap justify-start md:justify-end items-center gap-2">
@@ -114,34 +120,44 @@ export default function HomePage() {
                     }}
                     className={`px-5 py-2 rounded-full text-sm font-semibold shadow-sm transition duration-200 whitespace-nowrap ${
                       selectedCategory === cat
-                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white scale-105"
-                        : "bg-white text-gray-800 border border-gray-300 hover:bg-purple-100"
+                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white scale-105 border-2 border-purple-400"
+                        : "bg-gradient-to-br from-white via-purple-50 to-indigo-50 text-indigo-700 border border-purple-200 hover:bg-purple-100 hover:border-indigo-300"
                     }`}
                   >
                     {cat === "All" ? "🌐 All" : `📂 ${cat}`}
                   </button>
                 ))}
 
+                {/* Custom dropdown for more categories */}
                 {allCategories.length > 3 && (
-                  <select
-                    value={
-                      allCategories.slice(0, 3).includes(selectedCategory)
-                        ? ""
-                        : selectedCategory
-                    }
-                    onChange={(e) => {
-                      setSelectedCategory(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="min-w-[140px] border border-gray-300 rounded-full py-2 px-4 text-sm font-medium text-gray-700 bg-white shadow-sm hover:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400 transition"
-                  >
-                    <option value="">More Categories</option>
-                    {allCategories.slice(3).map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative" ref={categoryDropdownRef}>
+                    <button
+                      onClick={() => setShowCategoryDropdown((prev) => !prev)}
+                      className="flex items-center gap-1 min-w-[140px] px-4 py-2 rounded-full text-sm font-medium text-indigo-700 bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 shadow-sm hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
+                    >
+                      {allCategories.slice(0, 3).includes(selectedCategory) || !selectedCategory
+                        ? "More Categories"
+                        : `📂 ${selectedCategory}`}
+                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                    {showCategoryDropdown && (
+                      <div className="absolute top-full left-0 mt-2 w-48 bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                        {allCategories.slice(3).map((cat) => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              setSelectedCategory(cat);
+                              setCurrentPage(1);
+                              setShowCategoryDropdown(false);
+                            }}
+                            className={`block w-full text-left px-4 py-2 text-sm transition font-medium ${selectedCategory === cat ? "bg-purple-100 text-indigo-700" : "text-gray-700 hover:bg-purple-50"}`}
+                          >
+                            📂 {cat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
