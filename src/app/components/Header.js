@@ -28,7 +28,7 @@ export default function Header({ cities = [], selectedCity, onCityChange }) {
       <Link href="/" className="flex items-center gap-1 group whitespace-nowrap">
         <div className="w-7 h-7 relative">
           <Image
-            src="/logo.png"
+            src="https://res.cloudinary.com/dn4dv5zlz/image/upload/v1751740209/offers/img/opwvtsv6xjl1wsm1gukf.png"
             alt="O"
             fill
             className="object-contain"
