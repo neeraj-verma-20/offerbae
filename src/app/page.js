@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import OfferCard from "./components/OfferCard";
+import DetailedOfferCard from "./components/DetailedOfferCard";
 import Header from "./components/Header";
 
 const pageSize = 6;
@@ -21,6 +22,7 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCity, setSelectedCity] = useState("All");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState(null);
   const categoryDropdownRef = useRef(null);
 
   useEffect(() => {
@@ -57,12 +59,16 @@ export default function HomePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const allCategories = ["All", ...new Set(offers.map((o) => o.category))];
+  const allCategories = ["All", ...new Set(offers.map((o) => o.category || "Uncategorized"))];
 
   const filteredOffers = offers.filter((offer) => {
+    // Handle cases where category or city might be null/undefined
+    const offerCategory = offer.category || "Uncategorized";
+    const offerCity = offer.city || "Unknown";
+    
     const categoryMatch =
-      selectedCategory === "All" || offer.category === selectedCategory;
-    const cityMatch = selectedCity === "All" || offer.city === selectedCity;
+      selectedCategory === "All" || offerCategory === selectedCategory;
+    const cityMatch = selectedCity === "All" || offerCity === selectedCity;
     return categoryMatch && cityMatch;
   });
 
@@ -79,6 +85,36 @@ export default function HomePage() {
     "All",
     ...Array.from(new Set(offers.map((o) => o.city || "Unknown")))
   ];
+
+  const handleOfferClick = (offer) => {
+    setSelectedOffer(offer);
+  };
+
+  const handleBackToOffers = () => {
+    setSelectedOffer(null);
+  };
+
+  // If an offer is selected, show the detailed view
+  if (selectedOffer) {
+    return (
+      <div>
+        <Header
+          cities={cities}
+          selectedCity={selectedCity}
+          onCityChange={(e) => {
+            setSelectedCity(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <main className="pt-28 min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-indigo-200 px-4 py-12 font-sans">
+          <DetailedOfferCard 
+            offer={selectedOffer} 
+            onBack={handleBackToOffers}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -178,6 +214,7 @@ export default function HomePage() {
                   {...offer}
                   isNew={currentPage === 1 && top3NewIds.includes(offer.id)}
                   daysLeft={getDaysLeft(offer.expiryDate)}
+                  onClick={() => handleOfferClick(offer)}
                 />
               ))}
             </div>

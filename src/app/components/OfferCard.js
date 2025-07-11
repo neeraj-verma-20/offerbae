@@ -10,6 +10,7 @@ export default function OfferCard({
   isNew,
   daysLeft,
   city,
+  onClick,
 }) {
   const getValidImage = (src) => {
     if (!src) return "/placeholder.png";
@@ -26,11 +27,22 @@ export default function OfferCard({
       : text;
   };
 
-  const CardContent = (
+  const handleCardClick = (e) => {
+    // Don't trigger if clicking on map link
+    if (e.target.closest('.map-link')) {
+      return;
+    }
+    if (onClick) {
+      onClick();
+    }
+  };
+
+  return (
     <div
-      className={`bg-white/60 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-md overflow-hidden transition-all duration-300 group hover:scale-[1.025] hover:shadow-2xl ${
+      className={`bg-white/60 backdrop-blur-lg border border-gray-100 rounded-2xl shadow-md overflow-hidden transition-all duration-300 group hover:scale-[1.025] hover:shadow-2xl cursor-pointer ${
         typeof daysLeft === "number" && daysLeft <= 5 ? "glow-red" : ""
       }`}
+      onClick={handleCardClick}
     >
       {/* 📸 Image */}
       <div className="relative w-full aspect-square overflow-hidden">
@@ -41,6 +53,7 @@ export default function OfferCard({
             fill
             priority
             className="object-cover transition-transform duration-300 group-hover:scale-105"
+            unoptimized
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm bg-gray-100">
@@ -92,9 +105,15 @@ export default function OfferCard({
             </div>
           )}
           {mapLink && (
-            <span className="flex items-center gap-1 text-indigo-600 font-medium">
+            <Link
+              href={mapLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="map-link flex items-center gap-1 text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
               📍 Map
-            </span>
+            </Link>
           )}
         </div>
       </div>
@@ -119,18 +138,5 @@ export default function OfferCard({
         }
       `}</style>
     </div>
-  );
-
-  return mapLink ? (
-    <Link
-      href={mapLink}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block"
-    >
-      {CardContent}
-    </Link>
-  ) : (
-    <div>{CardContent}</div>
   );
 }

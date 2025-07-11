@@ -28,7 +28,7 @@ export default function Header({ cities = [], selectedCity, onCityChange }) {
       <Link href="/" className="flex items-center gap-1 group whitespace-nowrap">
         <div className="w-7 h-7 relative">
           <Image
-            src="https://res.cloudinary.com/dn4dv5zlz/image/upload/v1751740209/offers/img/opwvtsv6xjl1wsm1gukf.png"
+            src="https://res.cloudinary.com/dn4dv5zlz/image/upload/v1752256563/logo_bpjjex.png"
             alt="O"
             fill
             className="object-contain"
@@ -41,13 +41,6 @@ export default function Header({ cities = [], selectedCity, onCityChange }) {
       </Link>
 
       <nav className="flex items-center gap-2 whitespace-nowrap">
-        <Link
-          href="/#offers"
-          className="text-gray-700 hover:text-indigo-600 text-sm font-medium transition-colors px-2 py-1"
-        >
-          Offers
-        </Link>
-
         {/* City dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
