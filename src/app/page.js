@@ -17,36 +17,51 @@ function getDaysLeft(expiryDate) {
 
 export default function HomePage() {
   const [offers, setOffers] = useState([]);
+  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCity, setSelectedCity] = useState("All");
+  const [selectedCity, setSelectedCity] = useState("All Cities");
+  const [selectedArea, setSelectedArea] = useState("All Areas");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const categoryDropdownRef = useRef(null);
 
+  // Fetch offers and locations
   useEffect(() => {
-    const fetchOffers = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch("/api/save-offers");
-        const data = await res.json();
+        const [offersRes, locationsRes] = await Promise.all([
+          fetch("/api/offers"),
+          fetch("/api/locations")
+        ]);
+        
+        const offersData = await offersRes.json();
+        const locationsData = await locationsRes.json();
 
-        if (Array.isArray(data)) {
-          const sorted = [...data].sort(
+        if (Array.isArray(offersData)) {
+          const sorted = [...offersData].sort(
             (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
           );
           setOffers(sorted);
         } else {
-          console.error("Invalid data format:", data);
+          setOffers([]);
+        }
+
+        if (Array.isArray(locationsData)) {
+          setLocations(locationsData);
+        } else {
+          setLocations([]);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch offers:", err);
+        setOffers([]);
+        setLocations([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOffers();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -59,17 +74,52 @@ export default function HomePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Get available cities from locations
+  const cities = [
+    ...locations
+      .map(loc => loc.city?.trim())
+      .filter(
+        (city, idx, arr) =>
+          city &&
+          city.toLowerCase() !== "all cities" &&
+          arr.findIndex(c => c?.toLowerCase() === city?.toLowerCase()) === idx // remove duplicates
+      )
+  ];
+
+  // Remove all "All Cities" (case-insensitive), then add it ONCE at the top
+  // Sort cities alphabetically (except 'All Cities' at the top)
+  const sortedCities = [...cities].sort((a, b) => a.localeCompare(b));
+  const finalCities = ["All Cities", ...sortedCities];
+
+  // Get available areas for selected city
+  const getAvailableAreas = () => {
+    if (selectedCity === "All Cities") return [];
+    const selectedLocation = locations.find(loc => loc.city === selectedCity);
+    return selectedLocation ? [...selectedLocation.areas].sort((a, b) => a.localeCompare(b)) : [];
+  };
+
+  const availableAreas = getAvailableAreas();
+
+  // Reset area when city changes
+  useEffect(() => {
+    setSelectedArea("All Areas");
+    setCurrentPage(1);
+  }, [selectedCity]);
+
   const allCategories = ["All", ...new Set(offers.map((o) => o.category || "Uncategorized"))];
 
   const filteredOffers = offers.filter((offer) => {
-    // Handle cases where category or city might be null/undefined
+    // Handle cases where category, city, or area might be null/undefined
     const offerCategory = offer.category || "Uncategorized";
     const offerCity = offer.city || "Unknown";
+    const offerArea = offer.area || "Unknown";
     
     const categoryMatch =
       selectedCategory === "All" || offerCategory === selectedCategory;
-    const cityMatch = selectedCity === "All" || offerCity === selectedCity;
-    return categoryMatch && cityMatch;
+    const cityMatch = selectedCity === "All Cities" || offerCity === selectedCity;
+    const areaMatch = selectedArea === "All Areas" || offerArea === selectedArea;
+    
+    return categoryMatch && cityMatch && areaMatch;
   });
 
   const totalPages = Math.ceil(filteredOffers.length / pageSize);
@@ -79,12 +129,6 @@ export default function HomePage() {
   );
 
   const top3NewIds = offers.slice(0, 3).map((o) => o.id);
-
-  // Derive unique cities from offers
-  const cities = [
-    "All",
-    ...Array.from(new Set(offers.map((o) => o.city || "Unknown")))
-  ];
 
   const handleOfferClick = (offer) => {
     setSelectedOffer(offer);
@@ -99,10 +143,16 @@ export default function HomePage() {
     return (
       <div>
         <Header
-          cities={cities}
+          cities={finalCities}
+          areas={availableAreas}
           selectedCity={selectedCity}
+          selectedArea={selectedArea}
           onCityChange={(e) => {
             setSelectedCity(e.target.value);
+            setCurrentPage(1);
+          }}
+          onAreaChange={(e) => {
+            setSelectedArea(e.target.value);
             setCurrentPage(1);
           }}
         />
@@ -119,10 +169,16 @@ export default function HomePage() {
   return (
     <div>
       <Header
-        cities={cities}
+        cities={finalCities}
+        areas={availableAreas}
         selectedCity={selectedCity}
+        selectedArea={selectedArea}
         onCityChange={(e) => {
           setSelectedCity(e.target.value);
+          setCurrentPage(1);
+        }}
+        onAreaChange={(e) => {
+          setSelectedArea(e.target.value);
           setCurrentPage(1);
         }}
       />

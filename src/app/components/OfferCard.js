@@ -10,6 +10,7 @@ export default function OfferCard({
   isNew,
   daysLeft,
   city,
+  area,
   onClick,
 }) {
   const getValidImage = (src) => {
@@ -77,44 +78,61 @@ export default function OfferCard({
       </div>
 
       {/* 📄 Content */}
-      <div className="flex flex-col justify-between min-h-[260px] p-8">
-        <h2 className="text-lg font-semibold text-gray-800 group-hover:text-purple-600 transition">
-          {title}
-        </h2>
-        {description && (
-          <p className="text-sm text-gray-600">{truncateDescription(description)}</p>
-        )}
+      <div className="flex flex-col justify-between min-h-[200px] p-5">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-800 group-hover:text-purple-600 transition mb-2">
+            {title}
+          </h2>
+          {description && (
+            <p className="text-sm text-gray-600 mb-3">{truncateDescription(description)}</p>
+          )}
+        </div>
 
-        {/* Bottom Row */}
-        <div className="mt-4 flex justify-between flex-wrap text-xs text-gray-500">
-          {city && (
-            <div className="flex items-center gap-1">
-              🏙️ <span className="font-medium text-gray-700">{city}</span>
+        {/* Bottom Section */}
+        <div>
+          {/* Bottom Actions Row */}
+          <div className="flex justify-between items-start text-xs">
+            {/* Left Column */}
+            <div className="flex flex-col gap-1">
+              {city && (
+                <div className="flex items-center gap-1 text-gray-500">
+                  🏙️ <span className="font-medium text-gray-700">{city}</span>
+                </div>
+              )}
+              {typeof daysLeft === "number" && daysLeft >= 0 && (
+                <div
+                  className={`flex items-center gap-1 ${
+                    daysLeft <= 3 ? "text-red-600 font-semibold" : "text-gray-500"
+                  }`}
+                >
+                  ⏳{" "}
+                  {daysLeft === 0
+                    ? "Expires today!"
+                    : `${daysLeft} day${daysLeft > 1 ? "s" : ""} left`}
+                </div>
+              )}
             </div>
-          )}
-          {typeof daysLeft === "number" && daysLeft >= 0 && (
-            <div
-              className={`flex items-center gap-1 ${
-                daysLeft <= 3 ? "text-red-600 font-semibold" : ""
-              }`}
-            >
-              ⏳{" "}
-              {daysLeft === 0
-                ? "Expires today!"
-                : `${daysLeft} day${daysLeft > 1 ? "s" : ""} left`}
+            
+            {/* Right Column */}
+            <div className="flex flex-col gap-1 items-end">
+              {area && (
+                <div className="flex items-center gap-1 text-gray-500">
+                  📍 <span className="font-medium text-gray-700">{area}</span>
+                </div>
+              )}
+              {mapLink && (
+                <Link
+                  href={mapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="map-link flex items-center gap-1 text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  📍 Map
+                </Link>
+              )}
             </div>
-          )}
-          {mapLink && (
-            <Link
-              href={mapLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="map-link flex items-center gap-1 text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
-              onClick={(e) => e.stopPropagation()}
-            >
-              📍 Map
-            </Link>
-          )}
+          </div>
         </div>
       </div>
 

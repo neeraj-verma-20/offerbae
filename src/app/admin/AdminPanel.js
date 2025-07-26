@@ -15,6 +15,7 @@ export default function AdminPanel() {
     category: "",
     expiryDate: "",
     city: "",
+    area: "",
   });
   const [offers, setOffers] = useState([]);
   const [editId, setEditId] = useState(null);
@@ -24,9 +25,13 @@ export default function AdminPanel() {
   const [modalImage, setModalImage] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [tab, setTab] = useState("form");
   const [description, setDescription] = useState("");
   const [imageLoading, setImageLoading] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [availableAreas, setAvailableAreas] = useState([]);
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterCity, setFilterCity] = useState("");
+  const [filterExpiryStatus, setFilterExpiryStatus] = useState("all");
 
   const wordCount = description.trim().split(/\s+/).length;
   const maxWords = 30;
@@ -39,9 +44,48 @@ export default function AdminPanel() {
     setOffers(data);
   };
 
+  const loadLocations = async () => {
+    try {
+      const res = await fetch("/api/locations");
+      const data = await res.json();
+      setLocations(data);
+    } catch (error) {
+      setLocations([]);
+    }
+  };
+
   useEffect(() => {
     loadOffers();
+    loadLocations();
   }, []);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterCategory, filterCity, filterExpiryStatus]);
+
+  // Update available areas when city changes
+  useEffect(() => {
+    if (form.city) {
+      const selectedLocation = locations.find(loc => loc.city === form.city);
+      if (selectedLocation) {
+        // Sort areas alphabetically
+        const sortedAreas = [...selectedLocation.areas].sort((a, b) => a.localeCompare(b));
+        setAvailableAreas(sortedAreas);
+      } else {
+        setAvailableAreas([]);
+      }
+    } else {
+      setAvailableAreas([]);
+    }
+    // Only reset area when city changes and we're not in edit mode
+    if (!editId) {
+      setForm(prev => ({ ...prev, area: "" }));
+    }
+  }, [form.city, locations, editId]);
+
+  // Get sorted cities for dropdown
+  const sortedCities = [...locations].sort((a, b) => a.city.localeCompare(b.city));
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -87,9 +131,9 @@ export default function AdminPanel() {
           setStatus("✅ Image uploaded successfully!");
           setTimeout(() => setStatus(""), 3000);
         } catch (error) {
+          setForm((prev) => ({ ...prev, image: "" }));
+          setImagePreview(null);
           setImageLoading(false);
-          console.error("Image upload error:", error);
-          alert("❌ Failed to upload image. Try again.");
         }
       }
     };
@@ -135,6 +179,7 @@ export default function AdminPanel() {
         category: "",
         expiryDate: "",
         city: "",
+        area: "",
         ownerName: "", // ✅ New
         phoneNumber: "", // ✅ New
         socialLink: "", // ✅ New
@@ -155,8 +200,22 @@ export default function AdminPanel() {
     setEditId(offer.id);
     setImagePreview(offer.image);
     setStatus("📝 Edit mode");
-    setTab("form");
     setDescription(offer.description || "");
+    
+    // Update available areas for the selected city
+    if (offer.city) {
+      const selectedLocation = locations.find(loc => loc.city === offer.city);
+      if (selectedLocation) {
+        // Sort areas alphabetically and set them
+        const sortedAreas = [...selectedLocation.areas].sort((a, b) => a.localeCompare(b));
+        setAvailableAreas(sortedAreas);
+      } else {
+        // If city not found in locations, set empty areas
+        setAvailableAreas([]);
+      }
+    } else {
+      setAvailableAreas([]);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -173,11 +232,42 @@ export default function AdminPanel() {
     }
   };
 
-  const filteredOffers = offers.filter((offer) =>
-    `${offer.title} ${offer.description} ${offer.category}`
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+  const filteredOffers = offers.filter((offer) => {
+    // Keyword search across all fields
+    const searchFields = [
+      offer.title || "",
+      offer.description || "",
+      offer.category || "",
+      offer.city || "",
+      offer.area || "",
+      offer.ownerName || "",
+      offer.phoneNumber || "",
+      offer.socialLink || "",
+      offer.mapLink || ""
+    ].join(" ").toLowerCase();
+    
+    const keywordMatch = searchQuery === "" || searchFields.includes(searchQuery.toLowerCase());
+    
+    // Category filter
+    const categoryMatch = filterCategory === "" || offer.category === filterCategory;
+    
+    // City filter
+    const cityMatch = filterCity === "" || offer.city === filterCity;
+    
+    // Expiry status filter
+    let expiryMatch = true;
+    if (filterExpiryStatus === "expiring") {
+      expiryMatch = isExpiringSoon(offer.expiryDate);
+    } else if (filterExpiryStatus === "expired") {
+      const daysLeft = getDaysLeft(offer.expiryDate);
+      expiryMatch = daysLeft !== null && daysLeft < 0;
+    } else if (filterExpiryStatus === "active") {
+      const daysLeft = getDaysLeft(offer.expiryDate);
+      expiryMatch = daysLeft === null || daysLeft >= 0;
+    }
+    
+    return keywordMatch && categoryMatch && cityMatch && expiryMatch;
+  });
 
   const isExpiringSoon = (expiryDate) => {
     if (!expiryDate) return false;
@@ -207,226 +297,306 @@ export default function AdminPanel() {
     <div className="p-4 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">📋 Offer Management</h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/admin" })}
-          className="text-red-500 text-sm"
-        >
-          Logout
-        </button>
-      </div>
-
-      <div className="flex gap-3 mb-6">
-        <button
-          className={`px-4 py-2 rounded-full ${
-            tab === "form" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setTab("form")}
-        >
-          Add/Edit
-        </button>
-        <button
-          className={`px-4 py-2 rounded-full ${
-            tab === "list" ? "bg-blue-600 text-white" : "bg-gray-200"
-          }`}
-          onClick={() => setTab("list")}
-        >
-          Manage
-        </button>
-      </div>
-
-      {tab === "form" && (
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-4 bg-white p-4 rounded-xl shadow"
-        >
-          {editId && (
-            <p className="text-sm font-medium text-yellow-600">
-              ✏️ You are currently editing offer ID: {editId}
-            </p>
-          )}
-          <input
-            name="ownerName"
-            placeholder="Business Owner Name"
-            value={form.ownerName || ""}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-
-          <input
-            name="phoneNumber"
-            placeholder="Phone Number"
-            value={form.phoneNumber || ""}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-
-          <input
-            name="socialLink"
-            placeholder="Linktree / Website / Instagram"
-            value={form.socialLink || ""}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-
-          <input
-            name="title"
-            placeholder="Title"
-            value={form.title}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded"
-          />
-          <textarea
-            value={description}
-            onChange={(e) => {
-              const words = e.target.value.trim().split(/\s+/);
-              if (words.length <= maxWords) {
-                setDescription(e.target.value);
-              }
-            }}
-            className="w-full border rounded p-2"
-            placeholder="Enter a short description (max 30 words)"
-            rows={3}
-          />
-
-          <p className="text-sm mt-1 text-right">
-            {wordCount}/{maxWords} words
-            {wordCount > maxWords && (
-              <span className="text-red-500 font-semibold ml-2">Too long!</span>
-            )}
-          </p>
-
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full border p-2 rounded"
-          />
-          {imageLoading && (
-            <div className="text-sm text-blue-600 animate-pulse mt-2">
-              ⏳ Uploading image...
-            </div>
-          )}
-
-          {imagePreview && (
-            <Image
-              src={imagePreview}
-              alt="Preview"
-              width={100}
-              height={100}
-              className="rounded border"
-            />
-          )}
-          <input
-            name="mapLink"
-            placeholder="Google Maps Link"
-            value={form.mapLink}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-          <select
-            name="category"
-            value={form.category}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded bg-white"
+        <div className="flex gap-2">
+          <a
+            href="/admin/locations"
+            className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
           >
-            <option value="">-- Select a Category --</option>
-            <option value="Food & Beverages">🍔 Food & Beverages</option>
-            <option value="Fashion & Clothing">👗 Fashion & Clothing</option>
-            <option value="Electronics & Gadgets">
-              📱 Electronics & Gadgets
-            </option>
-            <option value="Beauty & Wellness">💅 Beauty & Wellness</option>
-            <option value="Fitness & Gyms">🏋️ Fitness & Gyms</option>
-            <option value="Cafes & Bakeries">☕ Cafes & Bakeries</option>
-            <option value="Entertainment">🎬 Entertainment</option>
-            <option value="Education & Coaching">
-              📚 Education & Coaching
-            </option>
-            <option value="Travel & Tourism">✈️ Travel & Tourism</option>
-            <option value="Health & Medicine">💊 Health & Medicine</option>
-            <option value="Furniture & Home">🛋️ Furniture & Home</option>
-            <option value="Events & Activities">🎉 Events & Activities</option>
-            <option value="Grocery & Essentials">
-              🛒 Grocery & Essentials
-            </option>
-            <option value="Mobile & Accessories">
-              📱 Mobile & Accessories
-            </option>
-            <option value="Salon & Spa">💇 Salon & Spa</option>
-            <option value="Gifts & Stationery">🎁 Gifts & Stationery</option>
-            <option value="Others">🔖 Others</option>
-          </select>
-
-          <input
-            name="expiryDate"
-            type="date"
-            value={form.expiryDate}
-            onChange={handleChange}
-            className="w-full border p-2 rounded"
-          />
-          <select
-            name="city"
-            value={form.city}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded bg-white"
-          >
-            <option value="">-- Select a City --</option>
-            <option value="Indore">🏙️ Indore</option>
-            <option value="Bhopal">🏙️ Bhopal</option>
-          </select>
+            📍 Manage Locations
+          </a>
           <button
-            type="submit"
-            className="bg-green-600 text-white px-6 py-2 rounded"
+            onClick={() => signOut({ callbackUrl: "/admin" })}
+            className="text-red-500 text-sm"
           >
-            {editId ? "Update Offer" : "Add Offer"}
+            Logout
           </button>
-          {editId && (
-            <button
-              type="button"
-              onClick={() => {
-                setEditId(null);
-                setForm({
-                  title: "",
-                  description: "",
-                  image: "",
-                  mapLink: "",
-                  category: "",
-                  expiryDate: "",
-                  city: "",
-                });
-                setDescription("");
-                setImagePreview(null);
-                setStatus("🟡 Edit cancelled.");
-                setTimeout(() => setStatus(""), 3000);
-              }}
-              className="ml-4 text-sm text-gray-600 hover:text-red-600 underline"
-            >
-              ❌ Exit Edit Mode
-            </button>
-          )}
-          {status && <p className="text-sm mt-2 text-gray-600">{status}</p>}
-        </form>
-      )}
+        </div>
+      </div>
 
-      {tab === "list" && (
-        <div>
-          <input
-            type="text"
-            placeholder="Search offers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full border p-2 rounded mb-4"
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Offer Form */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold mb-4">Add/Edit Offer</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {editId && (
+              <p className="text-sm font-medium text-yellow-600">
+                ✏️ You are currently editing offer ID: {editId}
+              </p>
+            )}
+            <input
+              name="ownerName"
+              placeholder="Business Owner Name"
+              value={form.ownerName || ""}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            />
+
+            <input
+              name="phoneNumber"
+              placeholder="Phone Number"
+              value={form.phoneNumber || ""}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            />
+
+            <input
+              name="socialLink"
+              placeholder="Linktree / Website / Instagram"
+              value={form.socialLink || ""}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            />
+
+            <input
+              name="title"
+              placeholder="Title"
+              value={form.title}
+              onChange={handleChange}
+              required
+              className="w-full border p-2 rounded"
+            />
+            <textarea
+              value={description}
+              onChange={(e) => {
+                const words = e.target.value.trim().split(/\s+/);
+                if (words.length <= maxWords) {
+                  setDescription(e.target.value);
+                }
+              }}
+              className="w-full border rounded p-2"
+              placeholder="Enter a short description (max 30 words)"
+              rows={3}
+            />
+
+            <p className="text-sm mt-1 text-right">
+              {wordCount}/{maxWords} words
+              {wordCount > maxWords && (
+                <span className="text-red-500 font-semibold ml-2">Too long!</span>
+              )}
+            </p>
+
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full border p-2 rounded"
+            />
+            {imageLoading && (
+              <div className="text-sm text-blue-600 animate-pulse mt-2">
+                ⏳ Uploading image...
+              </div>
+            )}
+
+            {imagePreview && (
+              <Image
+                src={imagePreview}
+                alt="Preview"
+                width={100}
+                height={100}
+                className="rounded border"
+              />
+            )}
+            <input
+              name="mapLink"
+              placeholder="Google Maps Link"
+              value={form.mapLink}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            />
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              required
+              className="w-full border p-2 rounded bg-white"
+            >
+              <option value="">-- Select a Category --</option>
+              <option value="Food & Beverages">🍔 Food & Beverages</option>
+              <option value="Fashion & Clothing">👗 Fashion & Clothing</option>
+              <option value="Electronics & Gadgets">
+                📱 Electronics & Gadgets
+              </option>
+              <option value="Beauty & Wellness">💅 Beauty & Wellness</option>
+              <option value="Fitness & Gyms">🏋️ Fitness & Gyms</option>
+              <option value="Cafes & Bakeries">☕ Cafes & Bakeries</option>
+              <option value="Entertainment">🎬 Entertainment</option>
+              <option value="Education & Coaching">
+                📚 Education & Coaching
+              </option>
+              <option value="Travel & Tourism">✈️ Travel & Tourism</option>
+              <option value="Health & Medicine">💊 Health & Medicine</option>
+              <option value="Furniture & Home">🛋️ Furniture & Home</option>
+              <option value="Events & Activities">🎉 Events & Activities</option>
+              <option value="Grocery & Essentials">
+                🛒 Grocery & Essentials
+              </option>
+              <option value="Mobile & Accessories">
+                📱 Mobile & Accessories
+              </option>
+              <option value="Salon & Spa">💇 Salon & Spa</option>
+              <option value="Gifts & Stationery">🎁 Gifts & Stationery</option>
+              <option value="Others">🔖 Others</option>
+            </select>
+
+            <input
+              name="expiryDate"
+              type="date"
+              value={form.expiryDate}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+            />
+            <select
+              name="city"
+              value={form.city}
+              onChange={handleChange}
+              required
+              className="w-full border p-2 rounded bg-white"
+            >
+              <option value="">-- Select a City --</option>
+              {sortedCities.map((location) => (
+                <option key={location.city} value={location.city}>
+                  🏙️ {location.city}
+                </option>
+              ))}
+            </select>
+            
+            <select
+              name="area"
+              value={form.area}
+              onChange={handleChange}
+              required
+              className="w-full border p-2 rounded bg-white"
+              disabled={!form.city}
+            >
+              <option value="">-- Select an Area --</option>
+              {availableAreas.map((area, index) => (
+                <option key={`${area}-${index}`} value={area}>
+                  📍 {area}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="bg-green-600 text-white px-6 py-2 rounded"
+            >
+              {editId ? "Update Offer" : "Add Offer"}
+            </button>
+            {editId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditId(null);
+                  setForm({
+                    title: "",
+                    description: "",
+                    image: "",
+                    mapLink: "",
+                    category: "",
+                    expiryDate: "",
+                    city: "",
+                    area: "",
+                  });
+                  setDescription("");
+                  setImagePreview(null);
+                  setStatus("🟡 Edit cancelled.");
+                  setTimeout(() => setStatus(""), 3000);
+                }}
+                className="ml-4 text-sm text-gray-600 hover:text-red-600 underline"
+              >
+                ❌ Exit Edit Mode
+              </button>
+            )}
+            {status && <p className="text-sm mt-2 text-gray-600">{status}</p>}
+          </form>
+        </div>
+
+        {/* Offers List */}
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold mb-4">Manage Offers</h2>
+          
+          {/* Search and Filters */}
+          <div className="space-y-4 mb-6">
+            {/* Keyword Search */}
+            <input
+              type="text"
+              placeholder="🔍 Search by title, description, category, city, area, owner, phone, etc..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            
+            {/* Filter Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Category Filter */}
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">📂 All Categories</option>
+                {[...new Set(offers.map(offer => offer.category))].sort().map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              
+              {/* City Filter */}
+              <select
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                className="border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">🏙️ All Cities</option>
+                {[...new Set(offers.map(offer => offer.city))].sort().map(city => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+              
+              {/* Expiry Status Filter */}
+              <select
+                value={filterExpiryStatus}
+                onChange={(e) => setFilterExpiryStatus(e.target.value)}
+                className="border p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">⏰ All Offers</option>
+                <option value="active">✅ Active</option>
+                <option value="expiring">⚠️ Expiring Soon (≤5 days)</option>
+                <option value="expired">❌ Expired</option>
+              </select>
+            </div>
+            
+            {/* Results Count and Clear Filters */}
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-600">
+                📊 Showing {filteredOffers.length} of {offers.length} offers
+                {searchQuery && ` matching "${searchQuery}"`}
+              </div>
+              {(searchQuery || filterCategory || filterCity || filterExpiryStatus !== "all") && (
+                <button
+                  onClick={() => {
+                    setSearchQuery("");
+                    setFilterCategory("");
+                    setFilterCity("");
+                    setFilterExpiryStatus("all");
+                    setCurrentPage(1);
+                  }}
+                  className="text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  🗑️ Clear All Filters
+                </button>
+              )}
+            </div>
+          </div>
           {currentOffers.map((offer) => (
             <div
               key={offer.id}
               className={`p-4 rounded-xl shadow mb-4 flex gap-4 items-start transition ${
                 isExpiringSoon(offer.expiryDate)
                   ? "bg-red-100 animate-pulse"
-                  : "bg-white"
+                  : "bg-gray-50"
               }`}
             >
               {offer.image && (
@@ -475,7 +645,7 @@ export default function AdminPanel() {
                 )}
 
                 <p className="text-xs text-gray-500 mt-1">
-                  📂 {offer.category} | ⏳ Expires: {offer.expiryDate}
+                  📂 {offer.category} | 📍 {offer.city}, {offer.area} | ⏳ Expires: {offer.expiryDate}
                   {getDaysLeft(offer.expiryDate) !== null && (
                     <span className="ml-1 text-red-500 font-semibold">
                       ({getDaysLeft(offer.expiryDate)} days left)
@@ -546,7 +716,7 @@ export default function AdminPanel() {
             ))}
           </div>
         </div>
-      )}
+      </div>
 
       {modalOpen && (
         <div

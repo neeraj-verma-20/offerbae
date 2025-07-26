@@ -30,8 +30,10 @@ export async function POST(request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('❌ Error deleting offer:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -47,22 +49,9 @@ export async function GET() {
     const db = client.db('dealsDB');
     const collection = db.collection('offers');
 
-    const now = new Date();
-
-    // ✅ Fetch only non-expired offers
-    const offers = await collection
-      .find({
-        $or: [
-          { expiryDate: { $exists: false } },
-          { expiryDate: { $gt: now.toISOString() } },
-        ],
-      })
-      .sort({ createdAt: -1 })
-      .toArray();
-
+    const offers = await collection.find().sort({ createdAt: -1 }).toArray();
     return NextResponse.json(offers);
   } catch (error) {
-    console.error('❌ Error fetching offers:', error);
     return NextResponse.json([], { status: 500 });
   }
 }

@@ -29,8 +29,10 @@ export async function POST(req) {
 
     return NextResponse.json({ success: true, insertedId: result.insertedId });
   } catch (error) {
-    console.error('❌ Error inserting offer:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 
@@ -38,14 +40,12 @@ export async function POST(req) {
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db('dealsDB');
-    const collection = db.collection('offers');
+    const db = client.db("dealsDB");
+    const collection = db.collection("offers");
 
     const offers = await collection.find().sort({ createdAt: -1 }).toArray();
-
     return NextResponse.json(offers);
   } catch (error) {
-    console.error('❌ Error fetching offers:', error);
     return NextResponse.json([], { status: 500 });
   }
 }

@@ -60,7 +60,16 @@ export default function DetailedOfferCard({ offer, onBack }) {
       {/* Card */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden">
         {/* Image Section */}
-        <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-50 p-4 md:p-8">
+        <div className="w-full md:w-1/2 flex items-center justify-center bg-gray-50 p-4 md:p-8 relative">
+          {/* Back Button at Top */}
+          <button
+            onClick={onBack}
+            className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-sm text-gray-700 hover:text-gray-900 font-medium py-2 px-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 border border-gray-200 hover:border-gray-300 flex items-center gap-2"
+          >
+            <span className="text-lg">←</span>
+            <span className="hidden sm:inline">Back</span>
+          </button>
+          
           <div className="relative w-full aspect-square max-w-xs md:max-w-none">
             <Image
               src={getValidImage(offer.image)}

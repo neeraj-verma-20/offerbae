@@ -3,9 +3,8 @@ import { MongoClient } from 'mongodb';
 
 const uri = process.env.MONGODB_URI;
 
-if (!uri) {
-  console.error("❌ MONGODB_URI not defined. Check your environment variables on Vercel.");
-  throw new Error("❌ MONGODB_URI not defined in environment variables.");
+if (!process.env.MONGODB_URI) {
+  throw new Error('Please add your Mongo URI to .env.local');
 }
 
 let client;
