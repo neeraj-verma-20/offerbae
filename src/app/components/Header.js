@@ -63,6 +63,22 @@ export default function Header({
       </div>
 
       <nav className="flex items-center gap-1 sm:gap-2 whitespace-nowrap min-w-0">
+        {/* Reset Filters Button */}
+        {(selectedCity !== "All Cities" || selectedArea !== "All Areas") && (
+          <button
+            onClick={() => {
+              onCityChange({ target: { value: "All Cities" } });
+              onAreaChange({ target: { value: "All Areas" } });
+            }}
+            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm font-medium transition-all px-2 sm:px-3 py-1.5 rounded-full bg-white shadow-sm border border-red-200 hover:border-red-300 min-w-0"
+            title="Reset all filters"
+          >
+            <span className="hidden sm:inline">🔄</span>
+            <span className="sm:hidden">↺</span>
+            <span className="hidden sm:inline">Reset</span>
+          </button>
+        )}
+
         {/* City dropdown */}
         <div className="relative" ref={cityDropdownRef}>
           <button

@@ -14,7 +14,7 @@ export default async function AdminPageWrapper() {
             You must be logged in to view this page. Please log in to continue.
           </p>
           <a
-            href="/login"
+            href="/admin-secret"
             className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full text-sm font-medium transition-all duration-200"
           >
             🔐 Go to Login

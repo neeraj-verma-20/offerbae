@@ -74,6 +74,20 @@ export default function HomePage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Hidden admin access - Keyboard shortcut
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Ctrl+Shift+A to access admin
+      if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+        e.preventDefault();
+        window.location.href = '/admin-secret';
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
   // Get available cities from locations
   const cities = [
     ...locations
@@ -344,8 +358,15 @@ export default function HomePage() {
        w-12 h-12 sm:w-auto sm:h-auto animate-bounce"
       >
         <span className="hidden sm:inline">📢 Advertise with Us</span>
-        <span className="sm:hidden text-xl">📢</span>
+        <span className="sm:hidden text-xl">��</span>
       </a>
+      
+      {/* Hidden admin access area - invisible but clickable */}
+      <div 
+        onClick={() => window.location.href = '/admin-secret'}
+        className="fixed bottom-0 left-0 w-4 h-4 opacity-0 cursor-pointer z-40"
+        title="Admin Access"
+      />
     </div>
   );
 }

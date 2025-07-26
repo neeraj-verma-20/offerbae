@@ -128,7 +128,7 @@ export default function OfferCard({
                   className="map-link flex items-center gap-1 text-indigo-600 font-medium hover:text-indigo-800 transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  📍 Map
+                  🗺️ Map
                 </Link>
               )}
             </div>
