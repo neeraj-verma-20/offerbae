@@ -352,13 +352,13 @@ export default function HomePage() {
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-indigo-500 to-purple-600 text-white
-       px-5 py-3 sm:px-6 sm:py-3 rounded-full shadow-lg 
+       px-3 py-3 sm:px-6 sm:py-3 rounded-full shadow-lg 
        hover:scale-105 hover:shadow-2xl transition-all duration-300
        flex items-center justify-center text-sm sm:text-base 
        w-12 h-12 sm:w-auto sm:h-auto animate-bounce"
       >
         <span className="hidden sm:inline">📢 Advertise with Us</span>
-        <span className="sm:hidden text-xl">��</span>
+        <span className="sm:hidden text-2xl">📢</span>
       </a>
       
       {/* Hidden admin access area - invisible but clickable */}
