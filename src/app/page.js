@@ -80,7 +80,7 @@ export default function HomePage() {
       // Ctrl+Shift+A to access admin
       if (e.ctrlKey && e.shiftKey && e.key === 'A') {
         e.preventDefault();
-        window.location.href = '/admin-secret';
+        window.location.href = '/admin';
       }
     };
 
@@ -363,7 +363,7 @@ export default function HomePage() {
       
       {/* Hidden admin access area - invisible but clickable */}
       <div 
-        onClick={() => window.location.href = '/admin-secret'}
+        onClick={() => window.location.href = '/admin'}
         className="fixed bottom-0 left-0 w-4 h-4 opacity-0 cursor-pointer z-40"
         title="Admin Access"
       />
