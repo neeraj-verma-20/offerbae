@@ -35,6 +35,17 @@ export default function AdminPageWrapper() {
               continue
             </span>.
           </p>
+          
+          {/* Back Button */}
+          <div className="flex justify-center">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-fuchsia-600 via-purple-500 to-indigo-500 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+            >
+              <span className="text-lg">←</span>
+              <span>Back to Home</span>
+            </button>
+          </div>
         </div>
       </main>
     );
