@@ -38,6 +38,25 @@ export default function AdminPanel() {
 
   const offersPerPage = 5;
 
+  // Helper functions
+  const getDaysLeft = (expiryDate) => {
+    if (!expiryDate) return null;
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 ? diffDays : null;
+  };
+
+  const isExpiringSoon = (expiryDate) => {
+    if (!expiryDate) return false;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry - today;
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 5 && diffDays >= 0;
+  };
+
   const loadOffers = async () => {
     const res = await fetch("/api/save-offers");
     const data = await res.json();
@@ -269,23 +288,7 @@ export default function AdminPanel() {
     return keywordMatch && categoryMatch && cityMatch && expiryMatch;
   });
 
-  const isExpiringSoon = (expiryDate) => {
-    if (!expiryDate) return false;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry - today;
-    const diffDays = diffTime / (1000 * 60 * 60 * 24);
-    return diffDays <= 5 && diffDays >= 0;
-  };
 
-  const getDaysLeft = (expiryDate) => {
-    if (!expiryDate) return null;
-    const now = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry - now;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays >= 0 ? diffDays : null;
-  };
 
   const totalPages = Math.ceil(filteredOffers.length / offersPerPage);
   const currentOffers = filteredOffers.slice(
