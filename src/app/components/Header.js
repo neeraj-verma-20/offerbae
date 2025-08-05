@@ -42,7 +42,7 @@ export default function Header({
   };
 
   return (
-    <header className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-white/80 backdrop-blur-md border border-gray-200 shadow-lg rounded-full px-3 sm:px-6 py-2 flex justify-between items-center gap-2 sm:gap-3 z-50 transition-all w-[95%] max-w-5xl">
+    <header className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-white/80 backdrop-blur-md border border-gray-200 shadow-lg rounded-full px-2 sm:px-6 py-2 flex justify-between items-center gap-1 sm:gap-3 z-50 transition-all w-[95%] max-w-5xl">
       {/* Logo */}
       <div 
         onClick={handleLogoClick}
@@ -70,7 +70,7 @@ export default function Header({
               onCityChange({ target: { value: "All Cities" } });
               onAreaChange({ target: { value: "All Areas" } });
             }}
-            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs sm:text-sm font-medium transition-all px-2 sm:px-3 py-1.5 rounded-full bg-white shadow-sm border border-red-200 hover:border-red-300 min-w-0"
+            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium transition-all px-1.5 sm:px-3 py-1.5 rounded-full bg-white shadow-sm border border-red-200 hover:border-red-300 min-w-0 flex-shrink-0"
             title="Reset all filters"
           >
             <span className="hidden sm:inline">🔄</span>
@@ -80,20 +80,20 @@ export default function Header({
         )}
 
         {/* City dropdown */}
-        <div className="relative" ref={cityDropdownRef}>
+        <div className="relative flex-shrink-0" ref={cityDropdownRef}>
           <button
             onClick={() => setShowCityDropdown((prev) => !prev)}
-            className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 text-xs sm:text-sm font-medium transition-colors px-2 sm:px-3 py-1.5 rounded-full bg-white shadow-sm border border-gray-300 min-w-0"
+            className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 text-xs font-medium transition-colors px-1.5 sm:px-3 py-1.5 rounded-full bg-white shadow-sm border border-gray-300 min-w-0"
           >
             <span className="hidden sm:inline">🗺️</span>
             <span className="sm:hidden">📍</span>
-            <span className="truncate max-w-[80px] sm:max-w-[120px]">
+            <span className="truncate max-w-[60px] sm:max-w-[120px]">
               {selectedCity === "All Cities" ? "City" : selectedCity}
             </span>
           </button>
 
           {showCityDropdown && (
-            <div className="absolute top-full right-0 sm:left-0 mt-2 w-48 sm:w-64 max-h-72 overflow-y-auto bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 rounded-xl shadow-xl z-50 overflow-hidden">
+            <div className="absolute top-full right-0 sm:left-0 mt-2 w-40 sm:w-64 max-h-72 overflow-y-auto bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 rounded-xl shadow-xl z-50 overflow-hidden">
               {cities.map((city) => (
                 <button
                   key={city}
@@ -111,11 +111,11 @@ export default function Header({
         </div>
 
         {/* Area dropdown */}
-        <div className="relative" ref={areaDropdownRef}>
+        <div className="relative flex-shrink-0" ref={areaDropdownRef}>
           <button
             onClick={() => setShowAreaDropdown((prev) => !prev)}
             disabled={selectedCity === "All Cities"}
-            className={`flex items-center gap-1 text-xs sm:text-sm font-medium transition-colors px-2 sm:px-3 py-1.5 rounded-full shadow-sm border min-w-0 ${
+            className={`flex items-center gap-1 text-xs font-medium transition-colors px-1.5 sm:px-3 py-1.5 rounded-full shadow-sm border min-w-0 ${
               selectedCity === "All Cities" 
                 ? "bg-gray-100 text-gray-400 cursor-not-allowed" 
                 : "bg-white text-gray-700 hover:text-indigo-600 border-gray-300"
@@ -123,13 +123,13 @@ export default function Header({
           >
             <span className="hidden sm:inline">📍</span>
             <span className="sm:hidden">🏘️</span>
-            <span className="truncate max-w-[80px] sm:max-w-[120px]">
+            <span className="truncate max-w-[60px] sm:max-w-[120px]">
               {selectedArea === "All Areas" ? "Area" : selectedArea}
             </span>
           </button>
 
           {showAreaDropdown && selectedCity !== "All Cities" && (
-            <div className="absolute top-full right-0 sm:left-0 mt-2 w-48 sm:w-64 max-h-72 overflow-y-auto bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 rounded-xl shadow-xl z-50 overflow-hidden">
+            <div className="absolute top-full right-0 sm:left-0 mt-2 w-40 sm:w-64 max-h-72 overflow-y-auto bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 rounded-xl shadow-xl z-50 overflow-hidden">
               <button
                 onClick={(e) => {
                   onAreaChange({ target: { value: "All Areas" } });

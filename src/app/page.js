@@ -3,7 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import OfferCard from "./components/OfferCard";
 import DetailedOfferCard from "./components/DetailedOfferCard";
-import Header from "./components/Header";
+import ConditionalHeader from "./components/ConditionalHeader";
+import CompactCategoryFilter from "./components/CompactCategoryFilter";
 
 const pageSize = 6;
 
@@ -23,9 +24,7 @@ export default function HomePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCity, setSelectedCity] = useState("All Cities");
   const [selectedArea, setSelectedArea] = useState("All Areas");
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
-  const categoryDropdownRef = useRef(null);
 
   // Fetch offers and locations
   useEffect(() => {
@@ -62,16 +61,6 @@ export default function HomePage() {
     };
 
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target)) {
-        setShowCategoryDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Hidden admin access - Keyboard shortcut
@@ -156,7 +145,7 @@ export default function HomePage() {
   if (selectedOffer) {
     return (
       <div>
-        <Header
+        <ConditionalHeader
           cities={finalCities}
           areas={availableAreas}
           selectedCity={selectedCity}
@@ -182,7 +171,7 @@ export default function HomePage() {
 
   return (
     <div>
-      <Header
+      <ConditionalHeader
         cities={finalCities}
         areas={availableAreas}
         selectedCity={selectedCity}
@@ -211,62 +200,17 @@ export default function HomePage() {
         </section> */}
 
         {/* 🧩 Filters Section - Clean & Compact */}
-        <section className="max-w-7xl mx-auto px-4 mb-12">
-          <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6">
-            {/* 🌍 City Filter - moved to Header */}
-            {/* 📂 Category Filter */}
-            <div className="w-full md:flex-1">
-              <div className="flex flex-wrap justify-start md:justify-end items-center gap-2">
-                {allCategories.slice(0, 3).map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => {
-                      setSelectedCategory(cat);
-                      setCurrentPage(1);
-                    }}
-                    className={`px-5 py-2 rounded-full text-sm font-semibold shadow-sm transition duration-200 whitespace-nowrap ${
-                      selectedCategory === cat
-                        ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white scale-105 border-2 border-purple-400"
-                        : "bg-gradient-to-br from-white via-purple-50 to-indigo-50 text-indigo-700 border border-purple-200 hover:bg-purple-100 hover:border-indigo-300"
-                    }`}
-                  >
-                    {cat === "All" ? "🌐 All" : `📂 ${cat}`}
-                  </button>
-                ))}
-
-                {/* Custom dropdown for more categories */}
-                {allCategories.length > 3 && (
-                  <div className="relative" ref={categoryDropdownRef}>
-                    <button
-                      onClick={() => setShowCategoryDropdown((prev) => !prev)}
-                      className="flex items-center gap-1 min-w-[140px] px-4 py-2 rounded-full text-sm font-medium text-indigo-700 bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 shadow-sm hover:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-purple-300 transition"
-                    >
-                      {allCategories.slice(0, 3).includes(selectedCategory) || !selectedCategory
-                        ? "More Categories"
-                        : `📂 ${selectedCategory}`}
-                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                    </button>
-                    {showCategoryDropdown && (
-                      <div className="absolute top-full left-0 mt-2 w-48 bg-gradient-to-br from-white via-purple-50 to-indigo-50 border border-purple-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                        {allCategories.slice(3).map((cat) => (
-                          <button
-                            key={cat}
-                            onClick={() => {
-                              setSelectedCategory(cat);
-                              setCurrentPage(1);
-                              setShowCategoryDropdown(false);
-                            }}
-                            className={`block w-full text-left px-4 py-2 text-sm transition font-medium ${selectedCategory === cat ? "bg-purple-100 text-indigo-700" : "text-gray-700 hover:bg-purple-50"}`}
-                          >
-                            📂 {cat}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+        <section className="max-w-7xl mx-auto px-2 sm:px-4 mb-8 sm:mb-12">
+          <div className="flex flex-col gap-4">
+            {/* 📂 Category Filter - Optimized for Mobile */}
+            <CompactCategoryFilter
+              allCategories={allCategories}
+              selectedCategory={selectedCategory}
+              onCategoryChange={(category) => {
+                setSelectedCategory(category);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         </section>
 
