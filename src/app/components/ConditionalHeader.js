@@ -154,113 +154,122 @@ export default function ConditionalHeader({
 
       {/* Mobile Navigation */}
       <nav className="sm:hidden flex items-center gap-1">
-        {/* Filter Toggle Button */}
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 text-xs font-medium transition-colors px-2 py-1.5 rounded-full bg-white shadow-sm border border-gray-300"
-        >
-          <span>🔍</span>
-          <span className="hidden">Filters</span>
-        </button>
-
-        {/* Active Filters Indicator */}
+        {/* Reset Button - Outside Magnifying Glass */}
         {(selectedCity !== "All Cities" || selectedArea !== "All Areas") && (
-          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+          <button
+            onClick={() => {
+              onCityChange({ target: { value: "All Cities" } });
+              onAreaChange({ target: { value: "All Areas" } });
+            }}
+            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50 text-xs font-medium transition-all px-2 py-1.5 rounded-full bg-white shadow-sm border border-red-200 hover:border-red-300"
+            title="Reset all filters"
+          >
+            <span>↺</span>
+          </button>
         )}
-      </nav>
 
-      {/* Mobile Filters Overlay */}
-      {showFilters && (
-        <div className="sm:hidden absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4">
-          <div className="flex flex-col gap-3">
-            {/* Reset Button */}
-            {(selectedCity !== "All Cities" || selectedArea !== "All Areas") && (
-              <button
-                onClick={() => {
-                  onCityChange({ target: { value: "All Cities" } });
-                  onAreaChange({ target: { value: "All Areas" } });
-                  setShowFilters(false);
-                }}
-                className="flex items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 text-sm font-medium transition-all px-3 py-2 rounded-lg bg-white shadow-sm border border-red-200 hover:border-red-300"
-              >
-                🔄 Reset All Filters
-              </button>
-            )}
+        {/* Filter Toggle Button with Magnifying Glass */}
+        <div className="relative">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-1 text-gray-700 hover:text-indigo-600 text-xs font-medium transition-colors px-2 py-1.5 rounded-full bg-white shadow-sm border border-gray-300"
+          >
+            <span>🔍</span>
+            <span className="hidden">Filters</span>
+          </button>
 
-            {/* City Filter */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">City</label>
-              <div className="grid grid-cols-2 gap-2">
-                {cities.slice(0, 4).map((city) => (
+          {/* Mobile Filters Inside Magnifying Glass */}
+          {showFilters && (
+            <div className="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-4 min-w-[280px] max-h-[80vh] overflow-y-auto">
+              <div className="flex flex-col gap-3">
+                {/* Reset Button */}
+                {(selectedCity !== "All Cities" || selectedArea !== "All Areas") && (
                   <button
-                    key={city}
                     onClick={() => {
-                      onCityChange({ target: { value: city } });
+                      onCityChange({ target: { value: "All Cities" } });
+                      onAreaChange({ target: { value: "All Areas" } });
                       setShowFilters(false);
                     }}
-                    className={`px-3 py-2 text-xs rounded-lg transition font-medium ${
-                      selectedCity === city 
-                        ? "bg-purple-100 text-indigo-700 border border-purple-300" 
-                        : "bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
-                    }`}
+                    className="flex items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 text-sm font-medium transition-all px-3 py-2 rounded-lg bg-white shadow-sm border border-red-200 hover:border-red-300"
                   >
-                    {city === "All Cities" ? "🌐 All" : city}
-                  </button>
-                ))}
-                {cities.length > 4 && (
-                  <button
-                    onClick={() => setShowCityDropdown(true)}
-                    className="px-3 py-2 text-xs rounded-lg bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 transition font-medium"
-                  >
-                    +{cities.length - 4} more
+                    🔄 Reset All Filters
                   </button>
                 )}
-              </div>
-            </div>
 
-            {/* Area Filter */}
-            {selectedCity !== "All Cities" && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Area</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {areas.slice(0, 4).map((area, index) => (
+                {/* City Filter - All Cities */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">City</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {cities.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => {
+                          onCityChange({ target: { value: city } });
+                          setShowFilters(false);
+                        }}
+                        className={`px-3 py-2 text-xs rounded-lg transition font-medium ${
+                          selectedCity === city 
+                            ? "bg-purple-100 text-indigo-700 border border-purple-300" 
+                            : "bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        {city === "All Cities" ? "🌐 All" : city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Area Filter - Always show, not conditional */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">Area</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {/* Show "All Areas" option first */}
                     <button
-                      key={`${area}-${index}`}
                       onClick={() => {
-                        onAreaChange({ target: { value: area } });
+                        onAreaChange({ target: { value: "All Areas" } });
                         setShowFilters(false);
                       }}
                       className={`px-3 py-2 text-xs rounded-lg transition font-medium ${
-                        selectedArea === area 
+                        selectedArea === "All Areas" 
                           ? "bg-purple-100 text-indigo-700 border border-purple-300" 
                           : "bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
                       }`}
                     >
-                      {area === "All Areas" ? "🗺️ All" : area}
+                      🗺️ All
                     </button>
-                  ))}
-                  {areas.length > 4 && (
-                    <button
-                      onClick={() => setShowAreaDropdown(true)}
-                      className="px-3 py-2 text-xs rounded-lg bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 transition font-medium"
-                    >
-                      +{areas.length - 4} more
-                    </button>
-                  )}
+                    
+                    {/* Show areas for selected city, or all areas if "All Cities" is selected */}
+                    {(selectedCity === "All Cities" ? areas : areas).map((area, index) => (
+                      <button
+                        key={`${area}-${index}`}
+                        onClick={() => {
+                          onAreaChange({ target: { value: area } });
+                          setShowFilters(false);
+                        }}
+                        className={`px-3 py-2 text-xs rounded-lg transition font-medium ${
+                          selectedArea === area 
+                            ? "bg-purple-100 text-indigo-700 border border-purple-300" 
+                            : "bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        {area === "All Areas" ? "🗺️ All" : area}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {/* Close Button */}
-            <button
-              onClick={() => setShowFilters(false)}
-              className="mt-2 text-sm text-gray-500 hover:text-gray-700"
-            >
-              ✕ Close
-            </button>
-          </div>
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="mt-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  ✕ Close
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </nav>
 
       {/* Mobile Dropdowns */}
       {showCityDropdown && (
