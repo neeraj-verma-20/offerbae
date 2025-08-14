@@ -78,6 +78,16 @@ export default function AdminPanel() {
     loadLocations();
   }, []);
 
+  // Refresh locations when returning from location management
+  useEffect(() => {
+    const handleFocus = () => {
+      loadLocations();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);

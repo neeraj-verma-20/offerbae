@@ -148,12 +148,20 @@ export default function LocationManagement() {
     <div className="p-4 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold">📍 Location Management</h1>
-        <button
-          onClick={() => signOut({ callbackUrl: "/admin" })}
-          className="text-red-500 text-sm"
-        >
-          Logout
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => window.location.href = '/admin'}
+            className="px-4 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+          >
+            ← Back to Admin
+          </button>
+          <button
+            onClick={() => signOut({ callbackUrl: "/admin" })}
+            className="text-red-500 text-sm"
+          >
+            Logout
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-xl shadow mb-6">
@@ -215,7 +223,15 @@ export default function LocationManagement() {
 
       {/* Statistics */}
       <div className="bg-white p-4 rounded-xl shadow mb-6">
-        <h2 className="text-lg font-semibold mb-3">📊 Location Statistics</h2>
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-lg font-semibold">📊 Location Statistics</h2>
+          <button
+            onClick={loadLocations}
+            className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+          >
+            🔄 Refresh
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div className="bg-green-50 p-3 rounded">
             <div className="text-2xl font-bold text-green-600">{enabledLocations.length}</div>

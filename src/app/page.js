@@ -61,6 +61,14 @@ export default function HomePage() {
     };
 
     fetchData();
+
+    // Refresh data when returning to the page
+    const handleFocus = () => {
+      fetchData();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // Hidden admin access - Keyboard shortcut

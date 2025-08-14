@@ -61,6 +61,14 @@ export default function OfferSubmission() {
       }
     };
     fetchLocations();
+
+    // Refresh locations when returning to the page
+    const handleFocus = () => {
+      fetchLocations();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   const handleInputChange = (e) => {
