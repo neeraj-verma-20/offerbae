@@ -77,8 +77,40 @@ export default function LocationManagement() {
     setStatus("📝 Edit mode - " + location.city);
   };
 
+  const handleToggleStatus = async (city, currentStatus) => {
+    const newStatus = currentStatus === 'enabled' ? 'disabled' : 'enabled';
+    const action = newStatus === 'enabled' ? 'enable' : 'disable';
+    
+    if (!confirm(`Are you sure you want to ${action} "${city}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/locations`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          city: city,
+          status: newStatus
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setStatus(`✅ Location ${action}d successfully!`);
+        await loadLocations();
+        setTimeout(() => setStatus(""), 3000);
+      } else {
+        setStatus(`❌ ${data.error || `Failed to ${action} location`}`);
+      }
+    } catch (error) {
+      setStatus(`❌ Failed to ${action} location`);
+    }
+  };
+
   const handleDelete = async (city) => {
-    if (!confirm(`Are you sure you want to delete "${city}" and all its areas?`)) {
+    if (!confirm(`⚠️ Are you sure you want to PERMANENTLY DELETE "${city}" and all its areas? This action cannot be undone!`)) {
       return;
     }
 
@@ -90,7 +122,7 @@ export default function LocationManagement() {
       const data = await res.json();
 
       if (res.ok) {
-        setStatus("✅ Location deleted!");
+        setStatus("🗑️ Location permanently deleted!");
         await loadLocations();
         setTimeout(() => setStatus(""), 3000);
       } else {
@@ -108,6 +140,9 @@ export default function LocationManagement() {
     setStatus("🟡 Edit cancelled");
     setTimeout(() => setStatus(""), 3000);
   };
+
+  const enabledLocations = locations.filter(loc => loc.status !== 'disabled');
+  const disabledLocations = locations.filter(loc => loc.status === 'disabled');
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
@@ -178,30 +213,57 @@ export default function LocationManagement() {
         )}
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold mb-4">Current Locations</h2>
+      {/* Statistics */}
+      <div className="bg-white p-4 rounded-xl shadow mb-6">
+        <h2 className="text-lg font-semibold mb-3">📊 Location Statistics</h2>
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="bg-green-50 p-3 rounded">
+            <div className="text-2xl font-bold text-green-600">{enabledLocations.length}</div>
+            <div className="text-sm text-green-700">✅ Enabled</div>
+          </div>
+          <div className="bg-yellow-50 p-3 rounded">
+            <div className="text-2xl font-bold text-yellow-600">{disabledLocations.length}</div>
+            <div className="text-sm text-yellow-700">⏸️ Disabled</div>
+          </div>
+          <div className="bg-blue-50 p-3 rounded">
+            <div className="text-2xl font-bold text-blue-600">{locations.length}</div>
+            <div className="text-sm text-blue-700">📍 Total</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enabled Locations */}
+      <div className="bg-white p-6 rounded-xl shadow mb-6">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          ✅ Enabled Locations ({enabledLocations.length})
+        </h2>
         
-        {locations.length === 0 ? (
-          <p className="text-gray-500">No locations added yet.</p>
+        {enabledLocations.length === 0 ? (
+          <p className="text-gray-500">No enabled locations.</p>
         ) : (
           <div className="space-y-4">
-            {locations.map((location) => (
+            {enabledLocations.map((location) => (
               <div
                 key={location.city}
-                className="border rounded-lg p-4 hover:bg-gray-50"
+                className="border border-green-200 rounded-lg p-4 hover:bg-green-50 bg-green-50/30"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-grow">
-                    <h3 className="text-lg font-semibold text-blue-600">
-                      🏙️ {location.city}
-                    </h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-green-700">
+                        🏙️ {location.city}
+                      </h3>
+                      <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                        ✅ Active
+                      </span>
+                    </div>
                     <div className="mt-2">
                       <p className="text-sm text-gray-600 mb-1">Areas:</p>
                       <div className="flex flex-wrap gap-1">
                         {[...location.areas].sort((a, b) => a.localeCompare(b)).map((area, index) => (
                           <span
                             key={index}
-                            className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                            className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded"
                           >
                             📍 {area}
                           </span>
@@ -218,10 +280,16 @@ export default function LocationManagement() {
                       Edit
                     </button>
                     <button
+                      onClick={() => handleToggleStatus(location.city, location.status || 'enabled')}
+                      className="text-yellow-600 text-sm hover:underline"
+                    >
+                      ⏸️ Disable
+                    </button>
+                    <button
                       onClick={() => handleDelete(location.city)}
                       className="text-red-600 text-sm hover:underline"
                     >
-                      Delete
+                      🗑️ Delete
                     </button>
                   </div>
                 </div>
@@ -230,6 +298,71 @@ export default function LocationManagement() {
           </div>
         )}
       </div>
+
+      {/* Disabled Locations */}
+      {disabledLocations.length > 0 && (
+        <div className="bg-white p-6 rounded-xl shadow">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+            ⏸️ Disabled Locations ({disabledLocations.length})
+          </h2>
+          
+          <div className="space-y-4">
+            {disabledLocations.map((location) => (
+              <div
+                key={location.city}
+                className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 bg-gray-50/30 opacity-75"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-grow">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-lg font-semibold text-gray-600">
+                        🏙️ {location.city}
+                      </h3>
+                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                        ⏸️ Disabled
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-500 mb-1">Areas:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {[...location.areas].sort((a, b) => a.localeCompare(b)).map((area, index) => (
+                          <span
+                            key={index}
+                            className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded"
+                          >
+                            📍 {area}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => handleEdit(location)}
+                      className="text-blue-600 text-sm hover:underline"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(location.city, location.status)}
+                      className="text-green-600 text-sm hover:underline"
+                    >
+                      ✅ Enable
+                    </button>
+                    <button
+                      onClick={() => handleDelete(location.city)}
+                      className="text-red-600 text-sm hover:underline"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
