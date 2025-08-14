@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 export default function ImageConverter() {
   const [base64Result, setBase64Result] = useState("");
@@ -70,11 +71,16 @@ export default function ImageConverter() {
 
               <div className="bg-gray-50 p-4 rounded border">
                 <p className="text-xs text-gray-600 mb-2">Preview:</p>
-                <img 
-                  src={base64Result} 
-                  alt="Preview" 
-                  className="max-w-full h-auto max-h-48 rounded border"
-                />
+                <div className="relative w-full max-h-48">
+                  <Image 
+                    src={base64Result} 
+                    alt="Preview" 
+                    width={400}
+                    height={300}
+                    className="max-w-full h-auto max-h-48 rounded border object-contain"
+                    unoptimized
+                  />
+                </div>
               </div>
 
               <div className="bg-gray-50 p-4 rounded border">
@@ -91,7 +97,7 @@ export default function ImageConverter() {
             <ol className="text-sm text-blue-700 space-y-1">
               <li>1. Upload an image using the file input above</li>
               <li>2. Copy the generated base64 string</li>
-              <li>3. Paste it into the "ImageURL" column of your Excel file</li>
+              <li>3. Paste it into the &quot;ImageURL&quot; column of your Excel file</li>
               <li>4. Upload the Excel file in the admin panel</li>
             </ol>
           </div>
