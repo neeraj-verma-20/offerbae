@@ -292,9 +292,7 @@ export default function HomePage() {
         )}
       </main>
       <a
-        href="https://wa.me/918770326893?text=Hi%2C%20I%20want%20to%20promote%20my%20business%20on%20Offerbae%21%20Please%20share%20the%20details."
-        target="_blank"
-        rel="noopener noreferrer"
+        href="/offer-submission"
         className="fixed bottom-5 right-5 z-50 bg-gradient-to-r from-indigo-500 to-purple-600 text-white
        px-3 py-3 sm:px-6 sm:py-3 rounded-full shadow-lg 
        hover:scale-105 hover:shadow-2xl transition-all duration-300

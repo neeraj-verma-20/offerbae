@@ -9,10 +9,18 @@ export default function OfferDetailPage({ params }) {
     return <div className="p-6 text-center text-red-600">Offer not found</div>;
   }
 
+  const hasImage = typeof offer.image === 'string' && offer.image.trim() !== '';
+
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-4">{offer.title}</h1>
-      <Image src={offer.image} alt={offer.title} className="w-full max-w-md mb-4" />
+      {hasImage ? (
+        <div className="relative w-64 h-64 mb-4">
+          <Image src={offer.image} alt={offer.title} fill className="object-cover rounded" />
+        </div>
+      ) : (
+        <div className="w-64 h-64 mb-4 rounded bg-gray-100 border flex items-center justify-center text-gray-400">No Image</div>
+      )}
       <p className="text-lg">{offer.description}</p>
       <a
         href={offer.googleMapLink}

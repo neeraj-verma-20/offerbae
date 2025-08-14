@@ -302,6 +302,12 @@ export default function AdminPanel() {
         <h1 className="text-2xl font-semibold">📋 Offer Management</h1>
         <div className="flex gap-2">
           <a
+            href="/admin/submissions"
+            className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700"
+          >
+            📝 Manage Submissions
+          </a>
+          <a
             href="/admin/locations"
             className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
           >
@@ -391,13 +397,14 @@ export default function AdminPanel() {
             )}
 
             {imagePreview && (
-              <Image
-                src={imagePreview}
-                alt="Preview"
-                width={100}
-                height={100}
-                className="rounded border"
-              />
+              <div className="relative w-24 h-24">
+                <Image
+                  src={imagePreview}
+                  alt="Preview"
+                  fill
+                  className="object-cover rounded border"
+                />
+              </div>
             )}
             <input
               name="mapLink"
@@ -602,19 +609,32 @@ export default function AdminPanel() {
                   : "bg-gray-50"
               }`}
             >
-              {offer.image && (
-                <Image
-                  src={offer.image}
-                  alt="Offer"
-                  width={80}
-                  height={80}
-                  className="rounded cursor-pointer border"
-                  onClick={() => {
-                    setModalImage(offer.image);
-                    setModalOpen(true);
-                  }}
-                />
-              )}
+                                {(() => {
+                    const src = (typeof offer.image === 'string' && offer.image.trim() !== '')
+                      ? offer.image
+                      : ((typeof offer.imageUrl === 'string' && offer.imageUrl.trim() !== '') ? offer.imageUrl : '');
+                    if (src) {
+                      return (
+                        <div className="relative w-20 h-20 flex-shrink-0">
+                          <Image
+                            src={src}
+                            alt="Offer"
+                            fill
+                            className="object-cover rounded cursor-pointer border"
+                            onClick={() => {
+                              setModalImage(src);
+                              setModalOpen(true);
+                            }}
+                          />
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="w-20 h-20 flex-shrink-0 rounded border bg-gray-100 flex items-center justify-center text-gray-400 text-xs">
+                        No Image
+                      </div>
+                    );
+                  })()}
               <div className="flex-grow">
                 <h3 className="text-lg font-semibold">{offer.title}</h3>
                 <p className="text-sm text-gray-700 mb-1">

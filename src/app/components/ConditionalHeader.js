@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function ConditionalHeader({ 
   cities = [], 
@@ -19,6 +19,11 @@ export default function ConditionalHeader({
   const cityDropdownRef = useRef(null);
   const areaDropdownRef = useRef(null);
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Hide header on admin pages and offer submission page
+  const isAdminPage = pathname?.startsWith('/admin') || pathname?.startsWith('/admin-secret');
+  const isOfferSubmissionPage = pathname === '/offer-submission';
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -39,6 +44,10 @@ export default function ConditionalHeader({
     router.push('/');
     window.location.href = '/';
   };
+
+  if (isAdminPage || isOfferSubmissionPage) {
+    return null;
+  }
 
   return (
     <header className="fixed top-5 left-1/2 transform -translate-x-1/2 bg-white/80 backdrop-blur-md border border-gray-200 shadow-lg rounded-full px-2 sm:px-6 py-2 flex justify-between items-center gap-1 sm:gap-3 z-50 transition-all w-[95%] max-w-5xl">

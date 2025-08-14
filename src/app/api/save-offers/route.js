@@ -115,7 +115,11 @@ export async function GET() {
 
     return NextResponse.json(offers);
   } catch (error) {
-    return NextResponse.json([], { status: 500 });
+    console.error('[API:/api/save-offers][GET] Error:', error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
 

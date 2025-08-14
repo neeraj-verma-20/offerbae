@@ -14,9 +14,15 @@ export default function OfferCard({
   onClick,
 }) {
   const getValidImage = (src) => {
-    if (!src) return "/placeholder.png";
-    if (src.startsWith("http")) return src;
-    if (src.startsWith("/")) return src;
+    if (typeof src !== 'string' || !src) {
+      return "/placeholder.png";
+    }
+    if (src.startsWith("http")) {
+      return src;
+    }
+    if (src.startsWith("/")) {
+      return src;
+    }
     return `/${src}`;
   };
 

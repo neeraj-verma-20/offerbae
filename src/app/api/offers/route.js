@@ -49,3 +49,23 @@ export async function GET() {
     return NextResponse.json([], { status: 500 });
   }
 }
+
+// ✅ DELETE: Clear all offers
+export async function DELETE() {
+  try {
+    const client = await clientPromise;
+    const db = client.db("dealsDB");
+    const collection = db.collection("offers");
+
+    const result = await collection.deleteMany({});
+
+    return NextResponse.json({ success: true, deletedCount: result.deletedCount });
+  } catch (error) {
+    console.error("Error clearing offers:", error);
+    return NextResponse.json(
+      { success: false, error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
