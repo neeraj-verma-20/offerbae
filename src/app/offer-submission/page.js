@@ -49,7 +49,7 @@ export default function OfferSubmission() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await fetch('/api/locations');
+        const response = await fetch('/api/locations/enabled');
         if (response.ok) {
           const data = await response.json();
           setLocations(Array.isArray(data) ? data : []);
@@ -83,11 +83,14 @@ export default function OfferSubmission() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      alert("Image size should be under 5MB");
+      // Use the browser's built-in validation instead of alert
+      e.target.setCustomValidity("Image size should be under 5MB");
+      e.target.reportValidity();
       return;
     }
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      e.target.setCustomValidity('Please select an image file');
+      e.target.reportValidity();
       return;
     }
 
@@ -95,7 +98,12 @@ export default function OfferSubmission() {
     const img = document.createElement('img');
     img.onload = () => {
       if (img.width !== img.height) {
-        alert('Please upload a square image (1:1 ratio).');
+        // Use custom validity for better UX
+        const fileInput = document.querySelector('input[type="file"]');
+        if (fileInput) {
+          fileInput.setCustomValidity('Please upload a square image (1:1 ratio)');
+          fileInput.reportValidity();
+        }
         setFormData(prev => ({ ...prev, image: null }));
         setImagePreview(null);
         URL.revokeObjectURL(objectURL);
@@ -127,7 +135,9 @@ export default function OfferSubmission() {
     for (const key of required) {
       const val = formData[key];
       if (!val || (typeof val === 'string' && val.trim() === '')) {
-        alert('Please fill all required fields.');
+        // Use form validation instead of alert
+        const form = e.target;
+        form.reportValidity();
         return;
       }
     }
@@ -143,8 +153,17 @@ export default function OfferSubmission() {
       setFormData({ title:"", description:"", image:null, imageUrl:"", mapLink:"", category:"", expiryDate:"", city:"", area:"", ownerName:"", phoneNumber:"", socialLink:"" });
       setImagePreview(null);
     } catch (err) {
-      console.error('Submission error:', err);
-      alert('Failed to submit offer. Please try again.');
+      // Use a more user-friendly error handling
+      setUploading(false);
+      // You could set an error state here instead of alert
+      const form = e.target;
+      if (form) {
+        const errorMsg = 'Failed to submit offer. Please try again.';
+        // Create a temporary validation message
+        form.setCustomValidity(errorMsg);
+        form.reportValidity();
+        setTimeout(() => form.setCustomValidity(''), 3000);
+      }
     } finally {
       setUploading(false);
     }

@@ -32,7 +32,7 @@ export default function HomePage() {
       try {
         const [offersRes, locationsRes] = await Promise.all([
           fetch("/api/offers"),
-          fetch("/api/locations")
+          fetch("/api/locations/enabled")
         ]);
         
         const offersData = await offersRes.json();

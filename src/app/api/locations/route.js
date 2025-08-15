@@ -28,7 +28,6 @@ export async function GET(req) {
     const locations = await collection.find(query).sort({ city: 1 }).toArray();
     return NextResponse.json(locations);
   } catch (error) {
-    console.error('[API:/api/locations][GET] Error:', error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }

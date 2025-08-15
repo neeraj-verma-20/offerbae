@@ -27,7 +27,8 @@ export default function AdminPanel() {
   const [currentPage, setCurrentPage] = useState(1);
   const [description, setDescription] = useState("");
   const [imageLoading, setImageLoading] = useState(false);
-  const [locations, setLocations] = useState([]);
+  const [locations, setLocations] = useState([]); // All locations (for management)
+  const [enabledLocations, setEnabledLocations] = useState([]); // Only enabled locations (for form)
   const [availableAreas, setAvailableAreas] = useState([]);
   const [filterCategory, setFilterCategory] = useState("");
   const [filterCity, setFilterCity] = useState("");
@@ -73,15 +74,27 @@ export default function AdminPanel() {
     }
   };
 
+  const loadEnabledLocations = async () => {
+    try {
+      const res = await fetch("/api/locations/enabled");
+      const data = await res.json();
+      setEnabledLocations(data);
+    } catch (error) {
+      setEnabledLocations([]);
+    }
+  };
+
   useEffect(() => {
     loadOffers();
     loadLocations();
+    loadEnabledLocations();
   }, []);
 
   // Refresh locations when returning from location management
   useEffect(() => {
     const handleFocus = () => {
       loadLocations();
+      loadEnabledLocations();
     };
 
     window.addEventListener('focus', handleFocus);
@@ -93,10 +106,10 @@ export default function AdminPanel() {
     setCurrentPage(1);
   }, [searchQuery, filterCategory, filterCity, filterExpiryStatus]);
 
-  // Update available areas when city changes
+  // Update available areas when city changes (using enabled locations for forms)
   useEffect(() => {
     if (form.city) {
-      const selectedLocation = locations.find(loc => loc.city === form.city);
+      const selectedLocation = enabledLocations.find(loc => loc.city === form.city);
       if (selectedLocation) {
         // Sort areas alphabetically
         const sortedAreas = [...selectedLocation.areas].sort((a, b) => a.localeCompare(b));
@@ -111,10 +124,10 @@ export default function AdminPanel() {
     if (!editId) {
       setForm(prev => ({ ...prev, area: "" }));
     }
-  }, [form.city, locations, editId]);
+  }, [form.city, enabledLocations, editId]);
 
-  // Get sorted cities for dropdown
-  const sortedCities = [...locations].sort((a, b) => a.city.localeCompare(b.city));
+  // Get sorted cities for dropdown (using enabled locations for forms)
+  const sortedCities = [...enabledLocations].sort((a, b) => a.city.localeCompare(b.city));
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -125,7 +138,8 @@ export default function AdminPanel() {
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert("Image size should be under 5MB.");
+      setStatus("❌ Image size should be under 5MB");
+      setTimeout(() => setStatus(""), 5000);
       return;
     }
 
@@ -134,7 +148,8 @@ export default function AdminPanel() {
 
     img.onload = async () => {
       if (img.width !== img.height) {
-        alert("Please upload a square image (1:1 ratio).");
+        setStatus("❌ Please upload a square image (1:1 ratio)");
+        setTimeout(() => setStatus(""), 5000);
         setForm((prev) => ({ ...prev, image: "" }));
         setImagePreview(null);
       } else {
@@ -231,16 +246,22 @@ export default function AdminPanel() {
     setStatus("📝 Edit mode");
     setDescription(offer.description || "");
     
-    // Update available areas for the selected city
+    // Update available areas for the selected city (use enabled locations for consistency)
     if (offer.city) {
-      const selectedLocation = locations.find(loc => loc.city === offer.city);
+      const selectedLocation = enabledLocations.find(loc => loc.city === offer.city);
       if (selectedLocation) {
         // Sort areas alphabetically and set them
         const sortedAreas = [...selectedLocation.areas].sort((a, b) => a.localeCompare(b));
         setAvailableAreas(sortedAreas);
       } else {
-        // If city not found in locations, set empty areas
-        setAvailableAreas([]);
+        // If city not found in enabled locations, check all locations (for backward compatibility)
+        const fallbackLocation = locations.find(loc => loc.city === offer.city);
+        if (fallbackLocation) {
+          const sortedAreas = [...fallbackLocation.areas].sort((a, b) => a.localeCompare(b));
+          setAvailableAreas(sortedAreas);
+        } else {
+          setAvailableAreas([]);
+        }
       }
     } else {
       setAvailableAreas([]);
