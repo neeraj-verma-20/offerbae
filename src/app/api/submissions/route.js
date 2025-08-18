@@ -58,6 +58,80 @@ export async function PUT(req) {
   }
 }
 
+// PATCH: Update submission data (for editing before approval)
+export async function PATCH(req) {
+  try {
+    const body = await req.json();
+    const { id, ...updateData } = body;
+    
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'Submission ID required' }, { status: 400 });
+    }
+
+    const client = await clientPromise;
+    const db = client.db('dealsDB');
+    const collection = db.collection('offer_submissions');
+    
+    const { ObjectId } = await import('mongodb');
+    
+    // Validate ObjectId format
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json({ success: false, error: 'Invalid submission ID format' }, { status: 400 });
+    }
+    
+    const _id = new ObjectId(id);
+    
+    // Check if submission exists
+    const existingSubmission = await collection.findOne({ _id });
+    if (!existingSubmission) {
+      return NextResponse.json({ success: false, error: 'Submission not found' }, { status: 404 });
+    }
+    
+    // Sanitize update data - only allow specific fields
+    const allowedFields = [
+      'title', 'description', 'category', 'ownerName', 'phoneNumber',
+      'city', 'area', 'mapLink', 'socialLink', 'expiryDate', 'imageUrl'
+    ];
+    
+    const sanitizedUpdateData = {};
+    allowedFields.forEach(field => {
+      if (updateData.hasOwnProperty(field)) {
+        sanitizedUpdateData[field] = updateData[field];
+      }
+    });
+    
+    // Remove any undefined, null, or empty object properties
+    Object.keys(sanitizedUpdateData).forEach(key => {
+      if (sanitizedUpdateData[key] === undefined || sanitizedUpdateData[key] === null) {
+        delete sanitizedUpdateData[key];
+      }
+    });
+    
+    // Update the submission with new data
+    const result = await collection.updateOne(
+      { _id },
+      { 
+        $set: { 
+          ...sanitizedUpdateData, 
+          updatedAt: new Date().toISOString() 
+        } 
+      }
+    );
+    
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Submission not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ success: true, message: 'Submission updated successfully' });
+  } catch (error) {
+    console.error('[API:/api/submissions][PATCH] Error:', error);
+    return NextResponse.json(
+      { success: false, error: error?.message || 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 // DELETE: Clear all submissions
 export async function DELETE() {
   try {

@@ -415,12 +415,29 @@ export default function AdminPanel() {
               )}
             </p>
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full border p-2 rounded"
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">🖼️ Offer Image</label>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2">
+                <div className="flex items-start space-x-2">
+                  <div className="text-blue-500 mt-0.5">ℹ️</div>
+                  <div className="text-sm text-blue-700">
+                    <p className="font-medium mb-1">Image Requirements:</p>
+                    <ul className="list-disc list-inside space-y-1 text-xs">
+                      <li><strong>Ratio:</strong> Square images only (1:1 ratio)</li>
+                      <li><strong>Size:</strong> Maximum 5MB</li>
+                      <li><strong>Format:</strong> JPG, PNG, WebP supported</li>
+                      <li><strong>Recommended:</strong> 500x500px or higher</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full border p-2 rounded"
+              />
+            </div>
             {imageLoading && (
               <div className="text-sm text-blue-600 animate-pulse mt-2">
                 ⏳ Uploading image...
@@ -428,13 +445,16 @@ export default function AdminPanel() {
             )}
 
             {imagePreview && (
-              <div className="relative w-24 h-24">
-                <Image
-                  src={imagePreview}
-                  alt="Preview"
-                  fill
-                  className="object-cover rounded border"
-                />
+              <div className="space-y-2">
+                <p className="text-xs text-green-600">✅ Square image detected - Perfect!</p>
+                <div className="relative w-24 h-24">
+                  <Image
+                    src={imagePreview}
+                    alt="Preview"
+                    fill
+                    className="object-cover rounded border"
+                  />
+                </div>
               </div>
             )}
             <input
