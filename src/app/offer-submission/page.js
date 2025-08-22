@@ -15,11 +15,15 @@ export default function OfferSubmission() {
     expiryDate: "",
     city: "",
     area: "",
+    keywords: "",
     ownerName: "",
     phoneNumber: "",
     socialLink: ""
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [originalImage, setOriginalImage] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [cropData, setCropData] = useState({ x: 0, y: 0, size: 0 });
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submissionId, setSubmissionId] = useState(null);
@@ -27,6 +31,8 @@ export default function OfferSubmission() {
   const [loadingLocations, setLoadingLocations] = useState(true);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
+  const [generateLoading, setGenerateLoading] = useState({ title: false, description: false });
+  const [aiError, setAiError] = useState(null);
 
   const categories = [
     "Food & Beverages",
@@ -97,8 +103,11 @@ export default function OfferSubmission() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // Clear any previous custom validity
+    e.target.setCustomValidity('');
+    
     if (file.size > 5 * 1024 * 1024) {
-      // Use the browser's built-in validation instead of alert
       e.target.setCustomValidity("Image size should be under 5MB");
       e.target.reportValidity();
       return;
@@ -109,28 +118,94 @@ export default function OfferSubmission() {
       return;
     }
 
-    const objectURL = URL.createObjectURL(file);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = document.createElement('img');
+      img.onload = () => {
+        // Check if image is already square
+        if (img.width === img.height) {
+          // Image is already square, use it directly
+          setFormData(prev => ({ ...prev, image: file }));
+          setImagePreview(event.target.result);
+          e.target.setCustomValidity('');
+        } else {
+          // Image needs cropping, open crop modal
+          setOriginalImage({ 
+            file, 
+            dataUrl: event.target.result, 
+            width: img.width, 
+            height: img.height 
+          });
+          
+          // Calculate initial crop area (center square)
+          const minDimension = Math.min(img.width, img.height);
+          const x = (img.width - minDimension) / 2;
+          const y = (img.height - minDimension) / 2;
+          
+          setCropData({ x, y, size: minDimension });
+          setShowCropModal(true);
+          e.target.setCustomValidity('');
+        }
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropConfirm = () => {
+    if (!originalImage) return;
+    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = cropData.size;
+    canvas.height = cropData.size;
+    
     const img = document.createElement('img');
     img.onload = () => {
-      if (img.width !== img.height) {
-        // Use custom validity for better UX
-        const fileInput = document.querySelector('input[type="file"]');
-        if (fileInput) {
-          fileInput.setCustomValidity('Please upload a square image (1:1 ratio)');
-          fileInput.reportValidity();
-        }
-        setFormData(prev => ({ ...prev, image: null }));
-        setImagePreview(null);
-        URL.revokeObjectURL(objectURL);
-        return;
-      }
-      setFormData(prev => ({ ...prev, image: file }));
-      const reader = new FileReader();
-      reader.onload = () => setImagePreview(reader.result);
-      reader.readAsDataURL(file);
-      URL.revokeObjectURL(objectURL);
+      ctx.drawImage(
+        img, 
+        cropData.x, 
+        cropData.y, 
+        cropData.size, 
+        cropData.size, 
+        0, 
+        0, 
+        cropData.size, 
+        cropData.size
+      );
+      
+      canvas.toBlob((blob) => {
+        const croppedFile = new File([blob], originalImage.file.name, {
+          type: originalImage.file.type,
+          lastModified: Date.now()
+        });
+        
+        setFormData(prev => ({ ...prev, image: croppedFile }));
+        setImagePreview(canvas.toDataURL());
+        setShowCropModal(false);
+        setOriginalImage(null);
+      }, originalImage.file.type, 0.9);
     };
-    img.src = objectURL;
+    img.src = originalImage.dataUrl;
+  };
+
+  const handleCropCancel = () => {
+    setShowCropModal(false);
+    setOriginalImage(null);
+    setCropData({ x: 0, y: 0, size: 0 });
+  };
+
+  const updateCropArea = (newX, newY) => {
+    if (!originalImage) return;
+    
+    const maxX = originalImage.width - cropData.size;
+    const maxY = originalImage.height - cropData.size;
+    
+    setCropData(prev => ({
+      ...prev,
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    }));
   };
 
   const uploadImageToCloudinary = (file) => {
@@ -201,7 +276,7 @@ export default function OfferSubmission() {
       const result = await resp.json();
       setSubmissionId(result.submissionId || result.insertedId || 'NA');
       setSubmitted(true);
-      setFormData({ title:"", description:"", image:null, imageUrl:"", mapLink:"", category:"", expiryDate:"", city:"", area:"", ownerName:"", phoneNumber:"", socialLink:"" });
+      setFormData({ title:"", description:"", image:null, imageUrl:"", mapLink:"", category:"", expiryDate:"", city:"", area:"", keywords:"", ownerName:"", phoneNumber:"", socialLink:"" });
       setImagePreview(null);
     } catch (err) {
       setError(err.message || 'An unexpected error occurred. Please try again.');
@@ -214,6 +289,57 @@ export default function OfferSubmission() {
   const getAreasForCity = (cityName) => {
     const location = locations.find(l => l.city === cityName);
     return location ? location.areas : [];
+  };
+
+  const generateContent = async (type) => {
+    // Validate required fields before generating
+    if (!formData.category || !formData.city || !formData.area || !formData.expiryDate) {
+      setAiError('Please fill in Category, City, Area, and Expiry Date before generating AI suggestions.');
+      return;
+    }
+
+    setAiError(null);
+    setGenerateLoading(prev => ({ ...prev, [type]: true }));
+
+    try {
+      const response = await fetch('/api/generate-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          category: formData.category,
+          city: formData.city,
+          area: formData.area,
+          expiryDate: formData.expiryDate,
+          keywords: formData.keywords
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate content');
+      }
+
+      const data = await response.json();
+      
+      if (type === 'title') {
+        setFormData(prev => ({ ...prev, title: data.title }));
+      } else if (type === 'description') {
+        setFormData(prev => ({ ...prev, description: data.description }));
+      } else if (type === 'both') {
+        setFormData(prev => ({ 
+          ...prev, 
+          title: data.title, 
+          description: data.description 
+        }));
+      }
+    } catch (error) {
+      console.error('Error generating content:', error);
+      setAiError(error.message || 'Failed to generate AI content. Please try again.');
+    } finally {
+      setGenerateLoading(prev => ({ ...prev, [type]: false }));
+    }
   };
 
   if (submitted) {
@@ -249,109 +375,209 @@ export default function OfferSubmission() {
               <p className="text-gray-600">All fields are required to submit your offer</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">📝 Offer Title *</label>
-                <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 50% Off on Pizza" />
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {/* Step 1: Factual Inputs Section */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">1</span>
+                  Basic Information
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">Let's start with the essential details about your offer</p>
+                
+                <div className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">📂 Category *</label>
+                    <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                      <option value="">Select a category</option>
+                      {categories.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">📄 Description *</label>
-                <textarea name="description" value={formData.description} onChange={handleInputChange} required rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Describe your offer in 30 words or less" />
-                <p className="text-xs text-gray-500 mt-1">
-                  {getWordCount(formData.description)}/30 words
-                  {getWordCount(formData.description) > 25 && getWordCount(formData.description) <= 30 && (
-                    <span className="text-orange-500 ml-2">• Almost at limit</span>
-                  )}
-                  {getWordCount(formData.description) === 30 && (
-                    <span className="text-red-500 ml-2">• Word limit reached</span>
-                  )}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">🖼️ Offer Image *</label>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                  <div className="flex items-start space-x-2">
-                    <div className="text-blue-500 mt-0.5">ℹ️</div>
-                    <div className="text-sm text-blue-700">
-                      <p className="font-medium mb-1">Image Requirements:</p>
-                      <ul className="list-disc list-inside space-y-1 text-xs">
-                        <li><strong>Ratio:</strong> Square images only (1:1 ratio)</li>
-                        <li><strong>Size:</strong> Maximum 5MB</li>
-                        <li><strong>Format:</strong> JPG, PNG, WebP supported</li>
-                        <li><strong>Recommended:</strong> 500x500px or higher</li>
-                      </ul>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🏙️ City *</label>
+                      <select name="city" value={formData.city} onChange={handleInputChange} required disabled={loadingLocations} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                        <option value="">{loadingLocations ? "Loading cities..." : "Select a city"}</option>
+                        {locations.map((loc, idx) => (
+                          <option key={`${loc.city}-${idx}`} value={loc.city}>{loc.city}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">📍 Area *</label>
+                      <select name="area" value={formData.area} onChange={handleInputChange} required disabled={!formData.city || loadingLocations} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                        <option value="">{!formData.city ? "Select city first" : "Select an area"}</option>
+                        {formData.city && getAreasForCity(formData.city).map((a, idx) => (
+                          <option key={`${a}-${idx}`} value={a}>{a}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">⏰ Expiry Date *</label>
+                    <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">🏷️ Keywords (Optional)</label>
+                    <input type="text" name="keywords" value={formData.keywords} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., discount, sale, premium, fresh" />
+                    <p className="text-xs text-gray-500 mt-1">Add relevant keywords to help generate better suggestions (optional)</p>
+                  </div>
                 </div>
-                <input type="file" accept="image/*" onChange={handleImageChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-                {imagePreview && (
-                  <div className="mt-3">
-                    <p className="text-xs text-green-600 mb-2">✅ Square image detected - Perfect!</p>
-                    <div className="relative w-48 h-48">
-                      <Image src={imagePreview} alt="Preview" fill className="rounded-lg border object-cover" />
+              </div>
+
+              {/* Step 2: AI-Suggested Content Section */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">2</span>
+                  Offer Details
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">Create compelling title and description for your offer</p>
+                
+                {/* AI Error Display */}
+                {aiError && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    <div className="flex items-center">
+                      <span className="mr-2">⚠️</span>
+                      <span className="text-sm">{aiError}</span>
                     </div>
                   </div>
                 )}
+
+                {/* Generate Both Button */}
+                <div className="text-center mb-4">
+                  <button 
+                    type="button" 
+                    onClick={() => generateContent('both')}
+                    disabled={generateLoading.title || generateLoading.description}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {(generateLoading.title || generateLoading.description) ? (
+                      <span className="flex items-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating...
+                      </span>
+                    ) : (
+                      '🤖 Generate Title & Description'
+                    )}
+                  </button>
+                </div>
+                
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">📝 Offer Title *</label>
+                      <button 
+                        type="button" 
+                        onClick={() => generateContent('title')}
+                        disabled={generateLoading.title || generateLoading.description}
+                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {generateLoading.title ? '⏳' : '🤖'} Generate Title
+                      </button>
+                    </div>
+                    <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="e.g., 50% Off on Pizza" />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-gray-700">📄 Description *</label>
+                      <button 
+                        type="button" 
+                        onClick={() => generateContent('description')}
+                        disabled={generateLoading.title || generateLoading.description}
+                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {generateLoading.description ? '⏳' : '🤖'} Generate Description
+                      </button>
+                    </div>
+                    <textarea name="description" value={formData.description} onChange={handleInputChange} required rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Describe your offer in 30 words or less" />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {getWordCount(formData.description)}/30 words
+                      {getWordCount(formData.description) > 25 && getWordCount(formData.description) <= 30 && (
+                        <span className="text-orange-500 ml-2">• Approaching limit</span>
+                      )}
+                      {getWordCount(formData.description) === 30 && (
+                        <span className="text-red-500 ml-2">• Word limit reached</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">📂 Category *</label>
-                <select name="category" value={formData.category} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="">Select a category</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Step 3: Image Upload Section */}
+              <div className="bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">3</span>
+                  Offer Image
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">Upload an eye-catching image for your offer</p>
+                
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">👤 Business Owner Name *</label>
-                  <input type="text" name="ownerName" value={formData.ownerName} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Your name" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">📞 Phone Number *</label>
-                  <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="+91-9876543210" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">🏙️ City *</label>
-                  <select name="city" value={formData.city} onChange={handleInputChange} required disabled={loadingLocations} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
-                    <option value="">{loadingLocations ? "Loading cities..." : "Select a city"}</option>
-                    {locations.map((loc, idx) => (
-                      <option key={`${loc.city}-${idx}`} value={loc.city}>{loc.city}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">📍 Area *</label>
-                  <select name="area" value={formData.area} onChange={handleInputChange} required disabled={!formData.city || loadingLocations} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
-                    <option value="">{!formData.city ? "Select city first" : "Select an area"}</option>
-                    {formData.city && getAreasForCity(formData.city).map((a, idx) => (
-                      <option key={`${a}-${idx}`} value={a}>{a}</option>
-                    ))}
-                  </select>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">🖼️ Offer Image *</label>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                    <div className="flex items-start space-x-2">
+                      <div className="text-blue-500 mt-0.5">ℹ️</div>
+                      <div className="text-sm text-blue-700">
+                        <p className="font-medium mb-1">Image Requirements:</p>
+                        <ul className="list-disc list-inside space-y-1 text-xs">
+                          <li><strong>Ratio:</strong> Square images only (1:1 ratio)</li>
+                          <li><strong>Size:</strong> Maximum 5MB</li>
+                          <li><strong>Format:</strong> JPG, PNG, WebP supported</li>
+                          <li><strong>Recommended:</strong> 500x500px or higher</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  <input type="file" accept="image/*" onChange={handleImageChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                  {imagePreview && (
+                    <div className="mt-3">
+                      <p className="text-xs text-green-600 mb-2">✅ Square image detected - Perfect!</p>
+                      <div className="relative w-48 h-48">
+                        <Image src={imagePreview} alt="Preview" fill className="rounded-lg border object-cover" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">🗺️ Google Maps Link *</label>
-                  <input type="url" name="mapLink" value={formData.mapLink} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://maps.google.com/..." />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">🌐 Website/Social Media *</label>
-                  <input type="url" name="socialLink" value={formData.socialLink} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="https://instagram.com/..." />
-                </div>
-              </div>
+              {/* Step 4: Business Details Section */}
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <span className="bg-orange-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">4</span>
+                  Business Details
+                </h3>
+                <p className="text-sm text-gray-600 mb-6">Tell customers how to find and contact you</p>
+                
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">👤 Business Owner Name *</label>
+                      <input type="text" name="ownerName" value={formData.ownerName} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="Your name" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">📞 Phone Number *</label>
+                      <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="+91-9876543210" />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">⏰ Expiry Date *</label>
-                <input type="date" name="expiryDate" value={formData.expiryDate} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🗺️ Google Maps Link *</label>
+                      <input type="url" name="mapLink" value={formData.mapLink} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="https://maps.google.com/..." />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">🌐 Website/Social Media *</label>
+                      <input type="url" name="socialLink" value={formData.socialLink} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500" placeholder="https://instagram.com/..." />
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {uploading && (
@@ -383,7 +609,119 @@ export default function OfferSubmission() {
           </div>
         </div>
       </div>
+
+      {/* Instagram-style Crop Modal */}
+      {showCropModal && originalImage && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b">
+              <h3 className="text-lg font-semibold text-gray-800 text-center">✂️ Crop Your Image</h3>
+              <p className="text-sm text-gray-600 text-center mt-1">Adjust the square to crop your image like Instagram</p>
+            </div>
+            
+            <div className="p-6">
+              <div className="relative mx-auto" style={{ width: '300px', height: '300px' }}>
+                {/* Original Image */}
+                <img
+                  src={originalImage.dataUrl}
+                  alt="Original"
+                  className="w-full h-full object-contain"
+                  style={{
+                    maxWidth: '300px',
+                    maxHeight: '300px'
+                  }}
+                />
+                
+                {/* Crop Overlay */}
+                <div
+                  className="absolute border-2 border-white shadow-lg cursor-move"
+                  style={{
+                    left: `${(cropData.x / originalImage.width) * 300}px`,
+                    top: `${(cropData.y / originalImage.height) * 300}px`,
+                    width: `${(cropData.size / originalImage.width) * 300}px`,
+                    height: `${(cropData.size / originalImage.height) * 300}px`,
+                    boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
+                  }}
+                  onMouseDown={(e) => {
+                    const startX = e.clientX;
+                    const startY = e.clientY;
+                    const startCropX = cropData.x;
+                    const startCropY = cropData.y;
+                    
+                    const handleMouseMove = (moveEvent) => {
+                      const deltaX = moveEvent.clientX - startX;
+                      const deltaY = moveEvent.clientY - startY;
+                      
+                      const scaleX = originalImage.width / 300;
+                      const scaleY = originalImage.height / 300;
+                      
+                      updateCropArea(
+                        startCropX + (deltaX * scaleX),
+                        startCropY + (deltaY * scaleY)
+                      );
+                    };
+                    
+                    const handleMouseUp = () => {
+                      document.removeEventListener('mousemove', handleMouseMove);
+                      document.removeEventListener('mouseup', handleMouseUp);
+                    };
+                    
+                    document.addEventListener('mousemove', handleMouseMove);
+                    document.addEventListener('mouseup', handleMouseUp);
+                  }}
+                >
+                  <div className="absolute inset-0 border border-white opacity-50">
+                    <div className="w-full h-full grid grid-cols-3 grid-rows-3">
+                      {Array.from({ length: 9 }).map((_, i) => (
+                        <div key={i} className="border border-white opacity-30"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Preview */}
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-600 mb-3">Preview:</p>
+                <div className="relative w-24 h-24 mx-auto border-2 border-gray-200 rounded-lg overflow-hidden">
+                  <div
+                    className="absolute"
+                    style={{
+                      width: `${(originalImage.width / cropData.size) * 96}px`,
+                      height: `${(originalImage.height / cropData.size) * 96}px`,
+                      left: `${-(cropData.x / cropData.size) * 96}px`,
+                      top: `${-(cropData.y / cropData.size) * 96}px`
+                    }}
+                  >
+                    <img
+                      src={originalImage.dataUrl}
+                      alt="Preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t bg-gray-50 flex gap-3">
+              <button
+                type="button"
+                onClick={handleCropCancel}
+                className="flex-1 bg-gray-600 text-white py-3 px-4 rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCropConfirm}
+                className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                ✅ Use Cropped Image
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
