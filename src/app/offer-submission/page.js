@@ -382,7 +382,7 @@ export default function OfferSubmission() {
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">1</span>
                   Basic Information
                 </h3>
-                <p className="text-sm text-gray-600 mb-6">Let's start with the essential details about your offer</p>
+                <p className="text-sm text-gray-600 mb-6">Let&apos;s start with the essential details about your offer</p>
                 
                 <div className="space-y-6">
                   <div>
@@ -622,10 +622,12 @@ export default function OfferSubmission() {
             <div className="p-6">
               <div className="relative mx-auto" style={{ width: '300px', height: '300px' }}>
                 {/* Original Image */}
-                <img
+                <Image
                   src={originalImage.dataUrl}
                   alt="Original"
                   className="w-full h-full object-contain"
+                  width={300}
+                  height={300}
                   style={{
                     maxWidth: '300px',
                     maxHeight: '300px'
@@ -693,10 +695,12 @@ export default function OfferSubmission() {
                       top: `${-(cropData.y / cropData.size) * 96}px`
                     }}
                   >
-                    <img
+                    <Image
                       src={originalImage.dataUrl}
                       alt="Preview"
                       className="w-full h-full object-contain"
+                      width={originalImage.width || 300}
+                      height={originalImage.height || 300}
                     />
                   </div>
                 </div>
