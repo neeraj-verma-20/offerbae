@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const infoBlocks = [
   {
@@ -35,6 +35,11 @@ const infoBlocks = [
 
 export default function DetailedOfferCard({ offer, onBack }) {
   const [descExpanded, setDescExpanded] = useState(false);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const getValidImage = (src) => {
     if (!src) return "/placeholder.png";
@@ -161,4 +166,4 @@ export default function DetailedOfferCard({ offer, onBack }) {
       </div>
     </div>
   );
-} 
+}
