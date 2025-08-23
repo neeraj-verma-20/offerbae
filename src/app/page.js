@@ -171,6 +171,7 @@ export default function HomePage() {
           <DetailedOfferCard 
             offer={selectedOffer} 
             onBack={handleBackToOffers}
+            socialLink={selectedOffer.socialLink}
           />
         </main>
       </div>
