@@ -108,14 +108,14 @@ export default function Banner({ banners = [] }) {
         breakpoint: 768,
         settings: {
           arrows: false, // Hide arrows on mobile
-          dots: true
+          dots: false // Hide dots on mobile and smaller screens
         }
       },
       {
         breakpoint: 480,
         settings: {
           arrows: false, // Hide arrows on small screens
-          dots: false // Hide dots on very small screens to save space
+          dots: false // Hide dots on very small screens
         }
       }
     ]
