@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '../../../lib/mongodb';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Configure Cloudinary using environment variables
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 // GET all banners
 export async function GET() {
@@ -104,21 +113,12 @@ export async function POST(request) {
         const buffer = Buffer.from(bytes);
         const base64Image = `data:${image.type};base64,${buffer.toString('base64')}`;
 
-        // Upload to Cloudinary using existing API
-        const uploadResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/upload-banner-image`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ image: base64Image }),
+        // Upload directly to Cloudinary
+        const result = await cloudinary.uploader.upload(base64Image, {
+          folder: 'offerbae_banners',
         });
 
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload image to Cloudinary');
-        }
-
-        const uploadResult = await uploadResponse.json();
-        imageUrl = uploadResult.imageUrl;
+        imageUrl = result.secure_url;
       } catch (fileError) {
         console.error('Cloudinary upload error:', fileError);
         return NextResponse.json(
