@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Users, Target, Heart, Zap, MapPin, Calendar } from 'lucide-react';
 import StaticPageHeader from '../components/StaticPageHeader';
 
@@ -37,7 +38,7 @@ export default function AboutPage() {
           </h1>
           <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
             Connecting local businesses with deal-savvy customers across India. 
-            We're on a mission to make amazing offers accessible to everyone.
+            We&apos;re on a mission to make amazing offers accessible to everyone.
           </p>
         </div>
       </section>
@@ -64,7 +65,7 @@ export default function AboutPage() {
                 <h2 className="text-2xl font-bold text-gray-800">Our Vision</h2>
               </div>
               <p className="text-gray-700 leading-relaxed">
-                To become India's most trusted platform for local deals and offers, 
+                To become India&apos;s most trusted platform for local deals and offers, 
                 fostering a community where businesses thrive and customers discover 
                 value in every corner of their city.
               </p>
@@ -134,7 +135,7 @@ export default function AboutPage() {
                 exclusive offers from cafes, gyms, boutiques, and more.
               </p>
               <p>
-                Today, we're proud to serve multiple cities across India, connecting thousands 
+                Today, we&apos;re proud to serve multiple cities across India, connecting thousands 
                 of customers with local businesses and helping communities thrive through 
                 commerce and discovery.
               </p>
@@ -152,18 +153,18 @@ export default function AboutPage() {
               Discover amazing deals from local businesses in your city
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
+              <Link
                 href="/"
                 className="inline-flex items-center px-6 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               >
                 Explore Offers
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/offer-submission"
                 className="inline-flex items-center px-6 py-3 bg-transparent border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition-colors"
               >
                 List Your Business
-              </a>
+              </Link>
             </div>
           </div>
         </div>

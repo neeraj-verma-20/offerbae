@@ -80,15 +80,7 @@ export default function Banner({ banners = [] }) {
     return () => {
       isMounted = false;
     };
-  }, []); // Empty dependency - fetch only once on mount
-
-  // Separate effect to handle prop changes
-  useEffect(() => {
-    if (banners.length > 0) {
-      setBannerItems(banners);
-      setLoading(false);
-    }
-  }, [banners]);
+  }, [banners]); // Include banners in dependency array
 
   // Slider settings
   const settings = {

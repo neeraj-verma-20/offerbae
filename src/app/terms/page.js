@@ -84,7 +84,7 @@ export default function TermsOfServicePage() {
                 <li>In any way that violates applicable laws or regulations</li>
                 <li>To transmit or procure sending of any advertising or promotional material</li>
                 <li>To impersonate or attempt to impersonate the company or other users</li>
-                <li>To engage in any other conduct that restricts or inhibits anyone's use of the service</li>
+                <li>To engage in any other conduct that restricts or inhibits anyone&apos;s use of the service</li>
                 <li>To submit false, misleading, or fraudulent information</li>
               </ul>
             </div>
@@ -117,7 +117,7 @@ export default function TermsOfServicePage() {
             </div>
             <div className="space-y-4 text-gray-700">
               <p>
-                The information on this service is provided on an "as is" basis. To the 
+                The information on this service is provided on an &quot;as is&quot; basis. To the 
                 fullest extent permitted by law, this company:
               </p>
               <ul className="list-disc list-inside space-y-2 ml-4">

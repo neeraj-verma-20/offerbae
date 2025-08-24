@@ -93,7 +93,7 @@ export default function SitemapPage() {
             Sitemap
           </h1>
           <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
-            Find your way around {companyName}. Here's a complete overview of all our pages and features.
+            Find your way around {companyName}. Here&apos;s a complete overview of all our pages and features.
           </p>
         </div>
       </section>
