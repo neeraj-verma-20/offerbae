@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Slider from 'react-slick';
@@ -37,17 +37,26 @@ const CustomNextArrow = ({ onClick }) => (
 export default function Banner({ banners = [] }) {
   const [loading, setLoading] = useState(true);
   const [bannerItems, setBannerItems] = useState([]);
+  const fetchedRef = useRef(false);
+  const mountedRef = useRef(true);
 
+  // Effect to handle prop banners
   useEffect(() => {
-    // If banners are provided as props, use them
     if (banners.length > 0) {
       setBannerItems(banners);
       setLoading(false);
+      fetchedRef.current = true;
+    }
+  }, [banners]);
+
+  // Effect to fetch banners from API only once on mount
+  useEffect(() => {
+    // Only fetch if no banners provided as props and haven't fetched yet
+    if (banners.length > 0 || fetchedRef.current) {
       return;
     }
 
-    // Otherwise fetch from API only once on mount
-    let isMounted = true;
+    fetchedRef.current = true; // Set immediately to prevent multiple calls
     
     const fetchBanners = async () => {
       try {
@@ -57,7 +66,7 @@ export default function Banner({ banners = [] }) {
         const data = await response.json();
         
         // Only update state if component is still mounted
-        if (isMounted) {
+        if (mountedRef.current) {
           if (Array.isArray(data)) {
             setBannerItems(data);
           } else {
@@ -66,7 +75,7 @@ export default function Banner({ banners = [] }) {
           setLoading(false);
         }
       } catch (error) {
-        if (isMounted) {
+        if (mountedRef.current) {
           console.error('Banner component: Error fetching banners:', error);
           setBannerItems([]);
           setLoading(false);
@@ -75,12 +84,14 @@ export default function Banner({ banners = [] }) {
     };
 
     fetchBanners();
+  }, []); // Empty dependency array - only run once on mount
 
-    // Cleanup function
+  // Cleanup effect
+  useEffect(() => {
     return () => {
-      isMounted = false;
+      mountedRef.current = false;
     };
-  }, [banners]); // Include banners in dependency array
+  }, []);
 
   // Slider settings
   const settings = {
