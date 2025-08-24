@@ -21,9 +21,10 @@ export default function ConditionalHeader({
   const router = useRouter();
   const pathname = usePathname();
 
-  // Hide header on admin pages and offer submission page
+  // Hide header on admin pages, offer submission page, and static pages
   const isAdminPage = pathname?.startsWith('/admin') || pathname?.startsWith('/admin-secret');
   const isOfferSubmissionPage = pathname === '/offer-submission';
+  const isStaticPage = ['/about', '/contact', '/privacy', '/terms', '/sitemap'].includes(pathname);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -45,7 +46,7 @@ export default function ConditionalHeader({
     window.location.href = '/';
   };
 
-  if (isAdminPage || isOfferSubmissionPage) {
+  if (isAdminPage || isOfferSubmissionPage || isStaticPage) {
     return null;
   }
 
