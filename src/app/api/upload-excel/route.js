@@ -37,7 +37,6 @@ export async function POST(request) {
       try {
         // Validate required fields
         if (!row.Title || !row.Description || !row.Category || !row.City || !row.Area) {
-          console.log('Skipping row due to missing required fields:', row);
           errorCount++;
           continue;
         }

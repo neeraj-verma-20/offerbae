@@ -59,17 +59,25 @@ export default function AdminPanel() {
   };
 
   const loadOffers = async () => {
-    const res = await fetch("/api/save-offers");
-    const data = await res.json();
-    setOffers(data);
+    try {
+      const res = await fetch("/api/save-offers");
+      const data = await res.json();
+      // Ensure data is always an array
+      setOffers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading offers:', error);
+      setOffers([]);
+    }
   };
 
   const loadLocations = async () => {
     try {
       const res = await fetch("/api/locations");
       const data = await res.json();
-      setLocations(data);
+      // Ensure data is always an array
+      setLocations(Array.isArray(data) ? data : []);
     } catch (error) {
+      console.error('Error loading locations:', error);
       setLocations([]);
     }
   };
@@ -78,8 +86,10 @@ export default function AdminPanel() {
     try {
       const res = await fetch("/api/locations/enabled");
       const data = await res.json();
-      setEnabledLocations(data);
+      // Ensure data is always an array
+      setEnabledLocations(Array.isArray(data) ? data : []);
     } catch (error) {
+      console.error('Error loading enabled locations:', error);
       setEnabledLocations([]);
     }
   };
@@ -343,6 +353,12 @@ export default function AdminPanel() {
             className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
           >
             📍 Manage Locations
+          </a>
+          <a
+            href="/admin/banners"
+            className="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700"
+          >
+            🖼️ Manage Banners
           </a>
           <button
             onClick={() => signOut({ callbackUrl: "/admin" })}

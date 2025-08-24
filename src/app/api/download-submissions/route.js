@@ -35,11 +35,7 @@ export async function GET(request) {
     // Status filter - Always filter for approved only for unique downloads
     query.status = 'approved';
 
-    console.log('Download query:', JSON.stringify(query, null, 2));
-
     const submissions = await collection.find(query).sort({ createdAt: -1 }).toArray();
-
-    console.log(`Found ${submissions.length} submissions matching filters`);
 
     // Remove duplicates based on key fields (title, ownerName, phoneNumber, city, area)
     const uniqueSubmissions = [];
@@ -55,7 +51,7 @@ export async function GET(request) {
       }
     });
 
-    console.log(`After removing duplicates: ${uniqueSubmissions.length} unique submissions`);
+
 
     const data = uniqueSubmissions.map(s => ({
       Title: s.title || '',

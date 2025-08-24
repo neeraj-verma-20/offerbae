@@ -348,7 +348,11 @@ export default function OfferSubmission() {
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
           <div className="text-6xl mb-4">✅</div>
           <h2 className="text-2xl font-semibold text-green-600 mb-4">Offer Submitted Successfully!</h2>
-          <p className="text-gray-600 mb-6">Submission ID: <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{submissionId}</span></p>
+          <p className="text-gray-600 mb-3">Submission ID: <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{submissionId}</span></p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-gray-700 mb-1"><span className="font-semibold">🔍 Review Process:</span> We will review your offer carefully.</p>
+            <p className="text-gray-700"><span className="font-semibold">⏱️ Timeline:</span> After successful verification, your offer will go live within 3 working days.</p>
+          </div>
           <div className="flex gap-3">
             <button onClick={() => setSubmitted(false)} className="flex-1 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Submit Another</button>
             <Link href="/" className="flex-1 bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 text-center">🏠 Go Home</Link>

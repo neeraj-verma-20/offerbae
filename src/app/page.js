@@ -5,6 +5,7 @@ import OfferCard from "./components/OfferCard";
 import DetailedOfferCard from "./components/DetailedOfferCard";
 import ConditionalHeader from "./components/ConditionalHeader";
 import CompactCategoryFilter from "./components/CompactCategoryFilter";
+import Banner from "./components/Banner";
 
 const pageSize = 6;
 
@@ -195,6 +196,10 @@ export default function HomePage() {
         }}
       />
       <main className="pt-28 min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-indigo-200 px-4 py-12 font-sans">
+        {/* Banner Carousel Section */}
+        <section className="max-w-7xl mx-auto px-2 sm:px-4 mb-8 sm:mb-12">
+          <Banner />
+        </section>
         {/* 🌟 Hero */}
         {/* <section className="text-center mb-14 px-2">
           <h1 className="text-4xl md:text-6xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-500 to-fuchsia-500 bg-clip-text text-transparent drop-shadow-lg animate-fadeIn">
