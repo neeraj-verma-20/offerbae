@@ -360,6 +360,12 @@ export default function AdminPanel() {
           >
             🖼️ Manage Banners
           </a>
+          <a
+            href="/admin/site-settings"
+            className="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700"
+          >
+            ⚙️ Site Settings
+          </a>
           <button
             onClick={() => signOut({ callbackUrl: "/admin" })}
             className="text-red-500 text-sm"
