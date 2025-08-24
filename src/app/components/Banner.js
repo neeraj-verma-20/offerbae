@@ -39,8 +39,6 @@ export default function Banner({ banners = [] }) {
   const [bannerItems, setBannerItems] = useState([]);
 
   useEffect(() => {
-    let isMounted = true;
-
     // If banners are provided as props, use them
     if (banners.length > 0) {
       setBannerItems(banners);
@@ -48,7 +46,9 @@ export default function Banner({ banners = [] }) {
       return;
     }
 
-    // Otherwise fetch from API
+    // Otherwise fetch from API only once on mount
+    let isMounted = true;
+    
     const fetchBanners = async () => {
       try {
         const response = await fetch('/api/banners');
@@ -80,7 +80,15 @@ export default function Banner({ banners = [] }) {
     return () => {
       isMounted = false;
     };
-  }, [banners]); // Include banners in dependency array
+  }, []); // Empty dependency - fetch only once on mount
+
+  // Separate effect to handle prop changes
+  useEffect(() => {
+    if (banners.length > 0) {
+      setBannerItems(banners);
+      setLoading(false);
+    }
+  }, [banners]);
 
   // Slider settings
   const settings = {
