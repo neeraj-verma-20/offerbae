@@ -92,6 +92,12 @@ export async function POST(request) {
         prompt += 'Clean business storefront, professional service, welcoming atmosphere. ';
       }
 
+      // Add keywords for better context if provided
+      if (data.keywords && data.keywords.trim()) {
+        const keywords = data.keywords.toLowerCase().trim();
+        prompt += `Focus on: ${keywords}. `;
+      }
+
       // Add style-specific enhancements - simplified
       const styleEnhancements = {
         realistic: 'clean photography, bright lighting, professional quality',
