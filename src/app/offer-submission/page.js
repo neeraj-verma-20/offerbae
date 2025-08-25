@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import ImageUploadWithAI from "../components/ImageUploadWithAI";
 
 export default function OfferSubmission() {
   const [formData, setFormData] = useState({
@@ -10,6 +11,9 @@ export default function OfferSubmission() {
     description: "",
     image: null,
     imageUrl: "",
+    imageMethod: "", // 'upload' or 'ai'
+    aiPrompt: "",
+    aiStyle: "",
     mapLink: "",
     category: "",
     expiryDate: "",
@@ -33,6 +37,12 @@ export default function OfferSubmission() {
   const [error, setError] = useState(null);
   const [generateLoading, setGenerateLoading] = useState({ title: false, description: false });
   const [aiError, setAiError] = useState(null);
+  const [aiAvailable, setAiAvailable] = useState({
+    image: false,
+    title: false,
+    description: false
+  });
+  const [checkingAiAvailability, setCheckingAiAvailability] = useState(true);
 
   const categories = [
     "Food & Beverages",
@@ -68,11 +78,45 @@ export default function OfferSubmission() {
         setLoadingLocations(false);
       }
     };
+
+    const checkAiAvailability = async () => {
+      try {
+        const [imageRes, titleRes, descRes] = await Promise.all([
+          fetch('/api/ai-availability?feature=image'),
+          fetch('/api/ai-availability?feature=title'),
+          fetch('/api/ai-availability?feature=description')
+        ]);
+
+        const [imageData, titleData, descData] = await Promise.all([
+          imageRes.ok ? imageRes.json() : { available: false },
+          titleRes.ok ? titleRes.json() : { available: false },
+          descRes.ok ? descRes.json() : { available: false }
+        ]);
+
+        setAiAvailable({
+          image: imageData.available && imageData.enabled,
+          title: titleData.available && titleData.enabled,
+          description: descData.available && descData.enabled
+        });
+      } catch (error) {
+        console.error('Error checking AI availability:', error);
+        setAiAvailable({
+          image: false,
+          title: false,
+          description: false
+        });
+      } finally {
+        setCheckingAiAvailability(false);
+      }
+    };
+
     fetchLocations();
+    checkAiAvailability();
 
     // Refresh locations when returning to the page
     const handleFocus = () => {
       fetchLocations();
+      checkAiAvailability();
     };
 
     window.addEventListener('focus', handleFocus);
@@ -100,56 +144,42 @@ export default function OfferSubmission() {
     return text.trim().split(/\s+/).filter(word => word.length > 0).length;
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // Clear any previous custom validity
-    e.target.setCustomValidity('');
-    
-    if (file.size > 5 * 1024 * 1024) {
-      e.target.setCustomValidity("Image size should be under 5MB");
-      e.target.reportValidity();
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      e.target.setCustomValidity('Please select an image file');
-      e.target.reportValidity();
+  const handleImageSelect = (imageData) => {
+    if (!imageData) {
+      // Clear image
+      setFormData(prev => ({ 
+        ...prev, 
+        image: null, 
+        imageUrl: "", 
+        imageMethod: "",
+        aiPrompt: "",
+        aiStyle: ""
+      }));
+      setImagePreview(null);
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = document.createElement('img');
-      img.onload = () => {
-        // Check if image is already square
-        if (img.width === img.height) {
-          // Image is already square, use it directly
-          setFormData(prev => ({ ...prev, image: file }));
-          setImagePreview(event.target.result);
-          e.target.setCustomValidity('');
-        } else {
-          // Image needs cropping, open crop modal
-          setOriginalImage({ 
-            file, 
-            dataUrl: event.target.result, 
-            width: img.width, 
-            height: img.height 
-          });
-          
-          // Calculate initial crop area (center square)
-          const minDimension = Math.min(img.width, img.height);
-          const x = (img.width - minDimension) / 2;
-          const y = (img.height - minDimension) / 2;
-          
-          setCropData({ x, y, size: minDimension });
-          setShowCropModal(true);
-          e.target.setCustomValidity('');
-        }
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
+    if (imageData.method === 'upload') {
+      // Handle uploaded file
+      setFormData(prev => ({ 
+        ...prev, 
+        image: imageData.file, 
+        imageUrl: "",
+        imageMethod: 'upload'
+      }));
+      setImagePreview(imageData.url);
+    } else if (imageData.method === 'ai') {
+      // Handle AI generated image
+      setFormData(prev => ({ 
+        ...prev, 
+        image: null,
+        imageUrl: imageData.url,
+        imageMethod: 'ai',
+        aiPrompt: imageData.prompt,
+        aiStyle: imageData.style
+      }));
+      setImagePreview(imageData.url);
+    }
   };
 
   const handleCropConfirm = () => {
@@ -253,7 +283,7 @@ export default function OfferSubmission() {
     e.preventDefault();
     setError(null);
 
-    const required = ['title','description','image','category','ownerName','phoneNumber','city','area','mapLink','socialLink','expiryDate'];
+    const required = ['title','description','category','ownerName','phoneNumber','city','area','mapLink','socialLink','expiryDate'];
     for (const key of required) {
       const val = formData[key];
       if (!val || (typeof val === 'string' && val.trim() === '')) {
@@ -261,22 +291,89 @@ export default function OfferSubmission() {
         return;
       }
     }
+
+    // Validate image (either uploaded file or AI-generated URL)
+    if (!formData.image && !formData.imageUrl) {
+      alert('Please upload an image or generate one with AI');
+      return;
+    }
     setUploading(true);
     setUploadProgress(0);
     try {
-      const imageUrl = await uploadImageToCloudinary(formData.image);
-      const submissionData = { ...formData, imageUrl, status: 'pending', submittedAt: new Date().toISOString() };
+      let finalImageUrl = formData.imageUrl; // For AI-generated images
+
+      // Upload to Cloudinary for both file uploads and AI-generated images
+      if (formData.imageMethod === 'upload' && formData.image) {
+        // Handle regular file upload
+        finalImageUrl = await uploadImageToCloudinary(formData.image);
+      } else if (formData.imageMethod === 'ai' && formData.imageUrl) {
+        // Convert AI-generated base64 image to file and upload to Cloudinary
+        try {
+          const base64Data = formData.imageUrl.split(',')[1]; // Remove data:image/png;base64, prefix
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: 'image/png' });
+          
+          // Create a file from the blob
+          const aiImageFile = new File([blob], `ai-generated-${Date.now()}.png`, { type: 'image/png' });
+          
+          // Upload the AI-generated image to Cloudinary
+          finalImageUrl = await uploadImageToCloudinary(aiImageFile);
+        } catch (conversionError) {
+          console.error('Error converting AI image to file:', conversionError);
+          // Fallback to using the base64 URL if conversion fails
+          finalImageUrl = formData.imageUrl;
+        }
+      }
+
+      const submissionData = { 
+        ...formData, 
+        imageUrl: finalImageUrl, 
+        status: 'pending', 
+        submittedAt: new Date().toISOString() 
+      };
+      
+      // Clean up form data
       delete submissionData.image;
 
-      const resp = await fetch('/api/submit-offer', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(submissionData) });
+      const resp = await fetch('/api/submit-offer', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(submissionData) 
+      });
+      
       if (!resp.ok) {
         const errorData = await resp.json();
         throw new Error(errorData.error || 'Failed to submit offer');
       }
+      
       const result = await resp.json();
       setSubmissionId(result.submissionId || result.insertedId || 'NA');
       setSubmitted(true);
-      setFormData({ title:"", description:"", image:null, imageUrl:"", mapLink:"", category:"", expiryDate:"", city:"", area:"", keywords:"", ownerName:"", phoneNumber:"", socialLink:"" });
+      
+      // Reset form
+      setFormData({ 
+        title:"", 
+        description:"", 
+        image:null, 
+        imageUrl:"", 
+        imageMethod: "",
+        aiPrompt: "",
+        aiStyle: "",
+        mapLink:"", 
+        category:"", 
+        expiryDate:"", 
+        city:"", 
+        area:"", 
+        keywords:"", 
+        ownerName:"", 
+        phoneNumber:"", 
+        socialLink:"" 
+      });
       setImagePreview(null);
     } catch (err) {
       setError(err.message || 'An unexpected error occurred. Please try again.');
@@ -292,6 +389,19 @@ export default function OfferSubmission() {
   };
 
   const generateContent = async (type) => {
+    // Check if specific AI features are available
+    const isAvailable = type === 'title' ? aiAvailable.title : 
+                       type === 'description' ? aiAvailable.description :
+                       type === 'both' ? (aiAvailable.title || aiAvailable.description) : false;
+    
+    if (!isAvailable) {
+      const featureName = type === 'title' ? 'AI title generation' : 
+                         type === 'description' ? 'AI description generation' : 
+                         'AI content generation';
+      setAiError(`${featureName} is currently unavailable.`);
+      return;
+    }
+
     // Validate required fields before generating
     if (!formData.category || !formData.city || !formData.area || !formData.expiryDate) {
       setAiError('Please fill in Category, City, Area, and Expiry Date before generating AI suggestions.');
@@ -323,15 +433,17 @@ export default function OfferSubmission() {
 
       const data = await response.json();
       
-      if (type === 'title') {
+      if (type === 'title' && aiAvailable.title) {
         setFormData(prev => ({ ...prev, title: data.title }));
-      } else if (type === 'description') {
+      } else if (type === 'description' && aiAvailable.description) {
         setFormData(prev => ({ ...prev, description: data.description }));
       } else if (type === 'both') {
+        const updates = {};
+        if (aiAvailable.title) updates.title = data.title;
+        if (aiAvailable.description) updates.description = data.description;
         setFormData(prev => ({ 
           ...prev, 
-          title: data.title, 
-          description: data.description 
+          ...updates
         }));
       }
     } catch (error) {
@@ -451,40 +563,53 @@ export default function OfferSubmission() {
                   </div>
                 )}
 
-                {/* Generate Both Button */}
-                <div className="text-center mb-4">
-                  <button 
-                    type="button" 
-                    onClick={() => generateContent('both')}
-                    disabled={generateLoading.title || generateLoading.description}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                  >
-                    {(generateLoading.title || generateLoading.description) ? (
-                      <span className="flex items-center">
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Generating...
-                      </span>
-                    ) : (
-                      '🤖 Generate Title & Description'
-                    )}
-                  </button>
-                </div>
+                {/* Generate Both Button - Only show if AI is available */}
+                {(aiAvailable.title || aiAvailable.description) && (
+                  <div className="text-center mb-4">
+                    <button 
+                      type="button" 
+                      onClick={() => generateContent('both')}
+                      disabled={generateLoading.title || generateLoading.description}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    >
+                      {(generateLoading.title || generateLoading.description) ? (
+                        <span className="flex items-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Generating...
+                        </span>
+                      ) : (
+                        '🤖 Generate Title & Description'
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {/* Show message when AI is disabled */}
+                {!aiAvailable.title && !aiAvailable.description && !checkingAiAvailability && (
+                  <div className="text-center mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                    <p className="text-sm text-gray-600">
+                      ✍️ Please enter your offer title and description manually
+                    </p>
+                  </div>
+                )}
                 
                 <div className="space-y-6">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700">📝 Offer Title *</label>
-                      <button 
-                        type="button" 
-                        onClick={() => generateContent('title')}
-                        disabled={generateLoading.title || generateLoading.description}
-                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {generateLoading.title ? '⏳' : '🤖'} Generate Title
-                      </button>
+                      {aiAvailable.title && (
+                        <button 
+                          type="button" 
+                          onClick={() => generateContent('title')}
+                          disabled={generateLoading.title || generateLoading.description}
+                          className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {generateLoading.title ? '⏳' : '🤖'} Generate Title
+                        </button>
+                      )}
                     </div>
                     <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="e.g., 50% Off on Pizza" />
                   </div>
@@ -492,14 +617,16 @@ export default function OfferSubmission() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700">📄 Description *</label>
-                      <button 
-                        type="button" 
-                        onClick={() => generateContent('description')}
-                        disabled={generateLoading.title || generateLoading.description}
-                        className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {generateLoading.description ? '⏳' : '🤖'} Generate Description
-                      </button>
+                      {aiAvailable.description && (
+                        <button 
+                          type="button" 
+                          onClick={() => generateContent('description')}
+                          disabled={generateLoading.title || generateLoading.description}
+                          className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {generateLoading.description ? '⏳' : '🤖'} Generate Description
+                        </button>
+                      )}
                     </div>
                     <textarea name="description" value={formData.description} onChange={handleInputChange} required rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Describe your offer in 30 words or less" />
                     <p className="text-xs text-gray-500 mt-1">
@@ -515,40 +642,21 @@ export default function OfferSubmission() {
                 </div>
               </div>
 
-              {/* Step 3: Image Upload Section */}
+              {/* Step 3: Image Upload Section with AI */}
               <div className="bg-gradient-to-r from-green-50 to-teal-50 border border-green-200 rounded-xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm mr-2">3</span>
                   Offer Image
                 </h3>
-                <p className="text-sm text-gray-600 mb-6">Upload an eye-catching image for your offer</p>
+                <p className="text-sm text-gray-600 mb-6">Upload your own image or generate one with AI</p>
                 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">🖼️ Offer Image *</label>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
-                    <div className="flex items-start space-x-2">
-                      <div className="text-blue-500 mt-0.5">ℹ️</div>
-                      <div className="text-sm text-blue-700">
-                        <p className="font-medium mb-1">Image Requirements:</p>
-                        <ul className="list-disc list-inside space-y-1 text-xs">
-                          <li><strong>Ratio:</strong> Square images only (1:1 ratio)</li>
-                          <li><strong>Size:</strong> Maximum 5MB</li>
-                          <li><strong>Format:</strong> JPG, PNG, WebP supported</li>
-                          <li><strong>Recommended:</strong> 500x500px or higher</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                  <input type="file" accept="image/*" onChange={handleImageChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-green-500" />
-                  {imagePreview && (
-                    <div className="mt-3">
-                      <p className="text-xs text-green-600 mb-2">✅ Square image detected - Perfect!</p>
-                      <div className="relative w-48 h-48">
-                        <Image src={imagePreview} alt="Preview" fill className="rounded-lg border object-cover" />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <ImageUploadWithAI
+                  onImageSelect={handleImageSelect}
+                  currentImage={imagePreview}
+                  formData={formData}
+                  aiAvailable={aiAvailable.image}
+                  required={true}
+                />
               </div>
 
               {/* Step 4: Business Details Section */}

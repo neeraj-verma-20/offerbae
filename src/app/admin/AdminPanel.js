@@ -366,6 +366,12 @@ export default function AdminPanel() {
           >
             ⚙️ Site Settings
           </a>
+          <a
+            href="/admin/ai-settings"
+            className="bg-pink-600 text-white px-4 py-2 rounded text-sm hover:bg-pink-700"
+          >
+            🤖 AI Settings
+          </a>
           <button
             onClick={() => signOut({ callbackUrl: "/admin" })}
             className="text-red-500 text-sm"

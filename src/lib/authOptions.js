@@ -16,7 +16,7 @@ export const authOptions = {
           email === process.env.ADMIN_EMAIL &&
           password === process.env.ADMIN_PASSWORD
         ) {
-          return { id: "admin", name: "Admin", email };
+          return { id: "admin", name: "Admin", email, role: "admin" };
         }
 
         return null; // ❌ Invalid credentials
@@ -39,12 +39,16 @@ export const authOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.email = user.email;
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
       if (token?.email) {
         session.user.email = token.email;
+      }
+      if (token?.role) {
+        session.user.role = token.role;
       }
       return session;
     },

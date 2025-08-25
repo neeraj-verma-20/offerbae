@@ -1,8 +1,50 @@
 import { NextResponse } from 'next/server';
+import clientPromise from '../../../lib/mongodb';
 
 export async function POST(request) {
   try {
     const { category, city, area, expiryDate, keywords } = await request.json();
+
+    // Check AI availability for title and description generation
+    const client = await clientPromise;
+    const db = client.db('offerwala');
+
+    let settings = await db.collection('ai_settings').findOne({ type: 'image_generation' });
+
+    // Default settings if none exist
+    if (!settings) {
+      settings = {
+        titleGeneration: true,
+        descriptionGeneration: true,
+        dailyLimit: 100,
+        monthlyLimit: 1000,
+        currentDailyUsage: 0,
+        currentMonthlyUsage: 0
+      };
+    }
+
+    // Check if either title or description generation is enabled
+    if (!settings.titleGeneration && !settings.descriptionGeneration) {
+      return NextResponse.json(
+        { error: 'AI content generation is currently disabled' },
+        { status: 403 }
+      );
+    }
+
+    // Check usage limits
+    if (settings.currentDailyUsage >= settings.dailyLimit) {
+      return NextResponse.json(
+        { error: 'Daily AI usage limit reached' },
+        { status: 429 }
+      );
+    }
+
+    if (settings.currentMonthlyUsage >= settings.monthlyLimit) {
+      return NextResponse.json(
+        { error: 'Monthly AI usage limit reached' },
+        { status: 429 }
+      );
+    }
 
     // Validate required fields
     if (!category || !city || !area || !expiryDate) {
@@ -12,10 +54,13 @@ export async function POST(request) {
       );
     }
 
-    // Check if Gemini API key is configured
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_gemini_api_key_here') {
+    // Check if either Gemini or Hugging Face API key is configured
+    const hasGemini = process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'your_gemini_api_key_here';
+    const hasHuggingFace = process.env.HUGGINGFACE_API_KEY;
+
+    if (!hasGemini && !hasHuggingFace) {
       return NextResponse.json(
-        { error: 'Gemini API key not configured. Please add GEMINI_API_KEY to your .env.local file.' },
+        { error: 'No AI API key configured. Please add GEMINI_API_KEY or HUGGINGFACE_API_KEY to your .env.local file.' },
         { status: 500 }
       );
     }
@@ -46,80 +91,91 @@ Example Output:
 
 Remember: Always respect the word limits. Always return valid JSON with "title" and "description". Never add comments, notes, or explanations outside JSON.`;
 
-    // Call Gemini AI API
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          },
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-          }
-        ]
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Gemini API Error:', errorData);
-      return NextResponse.json(
-        { error: 'Failed to generate content with Gemini AI' },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    
-    // Extract the generated content
-    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
-      console.error('Unexpected Gemini response format:', data);
-      return NextResponse.json(
-        { error: 'Unexpected response format from Gemini AI' },
-        { status: 500 }
-      );
-    }
-
-    const generatedText = data.candidates[0].content.parts[0].text;
-    
-    // Try to parse the JSON response from Gemini
     let parsedContent;
-    try {
-      // Clean up the response by removing markdown code blocks if present
-      const cleanedText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
-      parsedContent = JSON.parse(cleanedText);
-    } catch (parseError) {
-      console.error('Failed to parse Gemini response as JSON:', generatedText);
+
+    // Try Gemini first if available, otherwise use Hugging Face
+    if (hasGemini) {
+      // Call Gemini AI API
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          },
+          safetySettings: [
+            {
+              category: "HARM_CATEGORY_HARASSMENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_HATE_SPEECH",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+              category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+              threshold: "BLOCK_MEDIUM_AND_ABOVE"
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Gemini API Error:', errorData);
+        return NextResponse.json(
+          { error: 'Failed to generate content with Gemini AI' },
+          { status: response.status }
+        );
+      }
+
+      const data = await response.json();
+
+      // Extract the generated content
+      if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
+        console.error('Unexpected Gemini response format:', data);
+        return NextResponse.json(
+          { error: 'Unexpected response format from Gemini AI' },
+          { status: 500 }
+        );
+      }
+
+      const generatedText = data.candidates[0].content.parts[0].text;
+
+      // Try to parse the JSON response from Gemini
+      try {
+        // Clean up the response by removing markdown code blocks if present
+        const cleanedText = generatedText.replace(/```json\n?|\n?```/g, '').trim();
+        parsedContent = JSON.parse(cleanedText);
+      } catch (parseError) {
+        console.error('Failed to parse Gemini response as JSON:', generatedText);
+        return NextResponse.json(
+          { error: 'Generated content is not in valid JSON format' },
+          { status: 500 }
+        );
+      }
+    } else {
+      // Fallback to Hugging Face (placeholder - implement if needed)
       return NextResponse.json(
-        { error: 'Generated content is not in valid JSON format' },
-        { status: 500 }
+        { error: 'Hugging Face integration not implemented yet' },
+        { status: 501 }
       );
     }
+
 
     // Validate the parsed content
     if (!parsedContent.title || !parsedContent.description) {
@@ -147,11 +203,25 @@ Remember: Always respect the word limits. Always return valid JSON with "title" 
       );
     }
 
-    return NextResponse.json({
-      title: parsedContent.title,
-      description: parsedContent.description,
-      generatedAt: new Date().toISOString()
-    });
+    // Increment usage counter
+    await db.collection('ai_settings').updateOne(
+      { type: 'image_generation' },
+      {
+        $inc: {
+          currentDailyUsage: 1,
+          currentMonthlyUsage: 1
+        },
+        $set: { updatedAt: new Date() }
+      },
+      { upsert: true }
+    );
+
+    // Return only the fields that are enabled
+    const result = { generatedAt: new Date().toISOString() };
+    if (settings.titleGeneration) result.title = parsedContent.title;
+    if (settings.descriptionGeneration) result.description = parsedContent.description;
+
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('Error generating content:', error);
