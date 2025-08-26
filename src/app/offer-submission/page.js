@@ -44,6 +44,8 @@ export default function OfferSubmission() {
   });
   const [checkingAiAvailability, setCheckingAiAvailability] = useState(true);
 
+
+
   const categories = [
     "🎁 Gifts & Stationery",
     "🛋️ Furniture & Home Decor",
@@ -146,7 +148,7 @@ export default function OfferSubmission() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle description word limit
     if (name === 'description') {
       const words = value.trim().split(/\s+/).filter(word => word.length > 0);
@@ -154,7 +156,7 @@ export default function OfferSubmission() {
         return; // Don't update if exceeds 30 words
       }
     }
-    
+
     setFormData(prev => ({ ...prev, [name]: value }));
     if (name === 'city') {
       setFormData(prev => ({ ...prev, city: value, area: "" }));
@@ -168,10 +170,10 @@ export default function OfferSubmission() {
   const handleImageSelect = (imageData) => {
     if (!imageData) {
       // Clear image
-      setFormData(prev => ({ 
-        ...prev, 
-        image: null, 
-        imageUrl: "", 
+      setFormData(prev => ({
+        ...prev,
+        image: null,
+        imageUrl: "",
         imageMethod: "",
         aiPrompt: "",
         aiStyle: ""
@@ -182,17 +184,17 @@ export default function OfferSubmission() {
 
     if (imageData.method === 'upload') {
       // Handle uploaded file
-      setFormData(prev => ({ 
-        ...prev, 
-        image: imageData.file, 
+      setFormData(prev => ({
+        ...prev,
+        image: imageData.file,
         imageUrl: "",
         imageMethod: 'upload'
       }));
       setImagePreview(imageData.url);
     } else if (imageData.method === 'ai') {
       // Handle AI generated image
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         image: null,
         imageUrl: imageData.url,
         imageMethod: 'ai',
@@ -205,32 +207,32 @@ export default function OfferSubmission() {
 
   const handleCropConfirm = () => {
     if (!originalImage) return;
-    
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = cropData.size;
     canvas.height = cropData.size;
-    
+
     const img = document.createElement('img');
     img.onload = () => {
       ctx.drawImage(
-        img, 
-        cropData.x, 
-        cropData.y, 
-        cropData.size, 
-        cropData.size, 
-        0, 
-        0, 
-        cropData.size, 
+        img,
+        cropData.x,
+        cropData.y,
+        cropData.size,
+        cropData.size,
+        0,
+        0,
+        cropData.size,
         cropData.size
       );
-      
+
       canvas.toBlob((blob) => {
         const croppedFile = new File([blob], originalImage.file.name, {
           type: originalImage.file.type,
           lastModified: Date.now()
         });
-        
+
         setFormData(prev => ({ ...prev, image: croppedFile }));
         setImagePreview(canvas.toDataURL());
         setShowCropModal(false);
@@ -248,10 +250,10 @@ export default function OfferSubmission() {
 
   const updateCropArea = (newX, newY) => {
     if (!originalImage) return;
-    
+
     const maxX = originalImage.width - cropData.size;
     const maxY = originalImage.height - cropData.size;
-    
+
     setCropData(prev => ({
       ...prev,
       x: Math.max(0, Math.min(newX, maxX)),
@@ -304,7 +306,7 @@ export default function OfferSubmission() {
     e.preventDefault();
     setError(null);
 
-    const required = ['title','description','category','ownerName','phoneNumber','city','area','mapLink','socialLink','expiryDate'];
+    const required = ['title', 'description', 'category', 'ownerName', 'phoneNumber', 'city', 'area', 'mapLink', 'socialLink', 'expiryDate'];
     for (const key of required) {
       const val = formData[key];
       if (!val || (typeof val === 'string' && val.trim() === '')) {
@@ -338,10 +340,10 @@ export default function OfferSubmission() {
           }
           const byteArray = new Uint8Array(byteNumbers);
           const blob = new Blob([byteArray], { type: 'image/png' });
-          
+
           // Create a file from the blob
           const aiImageFile = new File([blob], `ai-generated-${Date.now()}.png`, { type: 'image/png' });
-          
+
           // Upload the AI-generated image to Cloudinary
           finalImageUrl = await uploadImageToCloudinary(aiImageFile);
         } catch (conversionError) {
@@ -351,49 +353,49 @@ export default function OfferSubmission() {
         }
       }
 
-      const submissionData = { 
-        ...formData, 
-        imageUrl: finalImageUrl, 
-        status: 'pending', 
-        submittedAt: new Date().toISOString() 
+      const submissionData = {
+        ...formData,
+        imageUrl: finalImageUrl,
+        status: 'pending',
+        submittedAt: new Date().toISOString()
       };
-      
+
       // Clean up form data
       delete submissionData.image;
 
-      const resp = await fetch('/api/submit-offer', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(submissionData) 
+      const resp = await fetch('/api/submit-offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(submissionData)
       });
-      
+
       if (!resp.ok) {
         const errorData = await resp.json();
         throw new Error(errorData.error || 'Failed to submit offer');
       }
-      
+
       const result = await resp.json();
       setSubmissionId(result.submissionId || result.insertedId || 'NA');
       setSubmitted(true);
-      
+
       // Reset form
-      setFormData({ 
-        title:"", 
-        description:"", 
-        image:null, 
-        imageUrl:"", 
+      setFormData({
+        title: "",
+        description: "",
+        image: null,
+        imageUrl: "",
         imageMethod: "",
         aiPrompt: "",
         aiStyle: "",
-        mapLink:"", 
-        category:"", 
-        expiryDate:"", 
-        city:"", 
-        area:"", 
-        keywords:"", 
-        ownerName:"", 
-        phoneNumber:"", 
-        socialLink:"" 
+        mapLink: "",
+        category: "",
+        expiryDate: "",
+        city: "",
+        area: "",
+        keywords: "",
+        ownerName: "",
+        phoneNumber: "",
+        socialLink: ""
       });
       setImagePreview(null);
     } catch (err) {
@@ -411,14 +413,14 @@ export default function OfferSubmission() {
 
   const generateContent = async (type) => {
     // Check if specific AI features are available
-    const isAvailable = type === 'title' ? aiAvailable.title : 
-                       type === 'description' ? aiAvailable.description :
-                       type === 'both' ? (aiAvailable.title || aiAvailable.description) : false;
-    
+    const isAvailable = type === 'title' ? aiAvailable.title :
+      type === 'description' ? aiAvailable.description :
+        type === 'both' ? (aiAvailable.title || aiAvailable.description) : false;
+
     if (!isAvailable) {
-      const featureName = type === 'title' ? 'AI title generation' : 
-                         type === 'description' ? 'AI description generation' : 
-                         'AI content generation';
+      const featureName = type === 'title' ? 'AI title generation' :
+        type === 'description' ? 'AI description generation' :
+          'AI content generation';
       setAiError(`${featureName} is currently unavailable.`);
       return;
     }
@@ -430,9 +432,24 @@ export default function OfferSubmission() {
     }
 
     setAiError(null);
-    setGenerateLoading(prev => ({ ...prev, [type]: true }));
+    setGenerateLoading(prev => {
+      let newState;
+      if (type === 'both') {
+        newState = { ...prev, title: true, description: true, both: true };
+      } else {
+        newState = { ...prev, [type]: true };
+      }
+      return newState;
+    });
+
+    // Small delay to ensure loading state is visible
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
+      // Add minimum delay to show loading state (2-3 seconds)
+      const minDelay = 2000 + Math.random() * 1000; // 2-3 seconds
+      const startTime = Date.now();
+
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: {
@@ -453,7 +470,16 @@ export default function OfferSubmission() {
       }
 
       const data = await response.json();
-      
+
+      // Calculate remaining delay time
+      const elapsedTime = Date.now() - startTime;
+      const remainingDelay = Math.max(0, minDelay - elapsedTime);
+
+      // Wait for remaining delay if needed
+      if (remainingDelay > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingDelay));
+      }
+
       if (type === 'title' && aiAvailable.title) {
         setFormData(prev => ({ ...prev, title: data.title }));
       } else if (type === 'description' && aiAvailable.description) {
@@ -462,8 +488,8 @@ export default function OfferSubmission() {
         const updates = {};
         if (aiAvailable.title) updates.title = data.title;
         if (aiAvailable.description) updates.description = data.description;
-        setFormData(prev => ({ 
-          ...prev, 
+        setFormData(prev => ({
+          ...prev,
           ...updates
         }));
       }
@@ -471,7 +497,15 @@ export default function OfferSubmission() {
       console.error('Error generating content:', error);
       setAiError(error.message || 'Failed to generate AI content. Please try again.');
     } finally {
-      setGenerateLoading(prev => ({ ...prev, [type]: false }));
+      setGenerateLoading(prev => {
+        let newState;
+        if (type === 'both') {
+          newState = { ...prev, title: false, description: false, both: false };
+        } else {
+          newState = { ...prev, [type]: false };
+        }
+        return newState;
+      });
     }
   };
 
@@ -520,7 +554,7 @@ export default function OfferSubmission() {
                   Basic Information
                 </h3>
                 <p className="text-sm text-gray-600 mb-6">Let&apos;s start with the essential details about your offer</p>
-                
+
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">📂 Category *</label>
@@ -573,7 +607,7 @@ export default function OfferSubmission() {
                   Offer Details
                 </h3>
                 <p className="text-sm text-gray-600 mb-6">Create compelling title and description for your offer</p>
-                
+
                 {/* AI Error Display */}
                 {aiError && (
                   <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
@@ -587,19 +621,20 @@ export default function OfferSubmission() {
                 {/* Generate Both Button - Only show if AI is available */}
                 {(aiAvailable.title || aiAvailable.description) && (
                   <div className="text-center mb-4">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => generateContent('both')}
                       disabled={generateLoading.title || generateLoading.description}
                       className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                     >
                       {(generateLoading.title || generateLoading.description) ? (
                         <span className="flex items-center">
-                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          Generating...
+                          {generateLoading.title && generateLoading.description ? 'Generating Both...' :
+                            generateLoading.title ? 'Generating Title...' : 'Generating Description...'}
                         </span>
                       ) : (
                         '🤖 Generate Title & Description'
@@ -616,40 +651,104 @@ export default function OfferSubmission() {
                     </p>
                   </div>
                 )}
-                
+
                 <div className="space-y-6">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700">📝 Offer Title *</label>
                       {aiAvailable.title && (
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => generateContent('title')}
                           disabled={generateLoading.title || generateLoading.description}
                           className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {generateLoading.title ? '⏳' : '🤖'} Generate Title
+                          {generateLoading.title ? (
+                            <span className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-purple-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Generating...
+                            </span>
+                          ) : (
+                            <>🤖 Generate Title</>
+                          )}
                         </button>
                       )}
                     </div>
-                    <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="e.g., 50% Off on Pizza" />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        required
+                        disabled={generateLoading.title}
+                        className={`w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${generateLoading.title ? 'bg-gray-50 text-gray-500' : ''}`}
+                        placeholder="e.g., 50% Off on Pizza"
+                      />
+                      {generateLoading.title && (
+                        <div className="absolute inset-0 bg-gray-50 bg-opacity-75 rounded-lg flex items-center justify-center">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Generating title...
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="block text-sm font-medium text-gray-700">📄 Description *</label>
                       {aiAvailable.description && (
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => generateContent('description')}
                           disabled={generateLoading.title || generateLoading.description}
                           className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-md hover:bg-purple-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {generateLoading.description ? '⏳' : '🤖'} Generate Description
+                          {generateLoading.description ? (
+                            <span className="flex items-center">
+                              <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-purple-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Generating...
+                            </span>
+                          ) : (
+                            <>🤖 Generate Description</>
+                          )}
                         </button>
                       )}
                     </div>
-                    <textarea name="description" value={formData.description} onChange={handleInputChange} required rows={3} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Describe your offer in 30 words or less" />
+                    <div className="relative">
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        required
+                        rows={3}
+                        disabled={generateLoading.description}
+                        className={`w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${generateLoading.description ? 'bg-gray-50 text-gray-500' : ''}`}
+                        placeholder="Describe your offer in 30 words or less"
+                      />
+                      {generateLoading.description && (
+                        <div className="absolute inset-0 bg-gray-50 bg-opacity-75 rounded-lg flex items-center justify-center">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Generating description...
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 mt-1">
                       {getWordCount(formData.description)}/30 words
                       {getWordCount(formData.description) > 25 && getWordCount(formData.description) <= 30 && (
@@ -670,7 +769,7 @@ export default function OfferSubmission() {
                   Offer Image
                 </h3>
                 <p className="text-sm text-gray-600 mb-6">Upload your own image or generate one with AI</p>
-                
+
                 <ImageUploadWithAI
                   onImageSelect={handleImageSelect}
                   currentImage={imagePreview}
@@ -687,7 +786,7 @@ export default function OfferSubmission() {
                   Business Details
                 </h3>
                 <p className="text-sm text-gray-600 mb-6">Tell customers how to find and contact you</p>
-                
+
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -716,8 +815,8 @@ export default function OfferSubmission() {
               {uploading && (
                 <div className="space-y-2">
                   <div className="w-full bg-gray-200 rounded-lg h-4">
-                    <div 
-                      className="bg-blue-600 h-4 rounded-lg text-center text-white text-xs leading-4 transition-all duration-300" 
+                    <div
+                      className="bg-blue-600 h-4 rounded-lg text-center text-white text-xs leading-4 transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     >
                       {uploadProgress}%
@@ -751,7 +850,7 @@ export default function OfferSubmission() {
               <h3 className="text-lg font-semibold text-gray-800 text-center">✂️ Crop Your Image</h3>
               <p className="text-sm text-gray-600 text-center mt-1">Adjust the square to crop your image like Instagram</p>
             </div>
-            
+
             <div className="p-6">
               <div className="relative mx-auto" style={{ width: '300px', height: '300px' }}>
                 {/* Original Image */}
@@ -766,7 +865,7 @@ export default function OfferSubmission() {
                     maxHeight: '300px'
                   }}
                 />
-                
+
                 {/* Crop Overlay */}
                 <div
                   className="absolute border-2 border-white shadow-lg cursor-move"
@@ -782,25 +881,25 @@ export default function OfferSubmission() {
                     const startY = e.clientY;
                     const startCropX = cropData.x;
                     const startCropY = cropData.y;
-                    
+
                     const handleMouseMove = (moveEvent) => {
                       const deltaX = moveEvent.clientX - startX;
                       const deltaY = moveEvent.clientY - startY;
-                      
+
                       const scaleX = originalImage.width / 300;
                       const scaleY = originalImage.height / 300;
-                      
+
                       updateCropArea(
                         startCropX + (deltaX * scaleX),
                         startCropY + (deltaY * scaleY)
                       );
                     };
-                    
+
                     const handleMouseUp = () => {
                       document.removeEventListener('mousemove', handleMouseMove);
                       document.removeEventListener('mouseup', handleMouseUp);
                     };
-                    
+
                     document.addEventListener('mousemove', handleMouseMove);
                     document.addEventListener('mouseup', handleMouseUp);
                   }}
@@ -814,7 +913,7 @@ export default function OfferSubmission() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Preview */}
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600 mb-3">Preview:</p>
@@ -839,7 +938,7 @@ export default function OfferSubmission() {
                 </div>
               </div>
             </div>
-            
+
             <div className="p-6 border-t bg-gray-50 flex gap-3">
               <button
                 type="button"
