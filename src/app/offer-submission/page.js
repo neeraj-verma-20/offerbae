@@ -87,6 +87,70 @@ export default function OfferSubmission() {
     "❓ Others"
   ];
 
+  // Common fallback keywords when AI is unavailable
+  const commonKeywords = [
+    "discount", "sale", "offer", "special", "deal", "limited time", "exclusive", "premium",
+    "quality", "best", "new", "fresh", "affordable", "cheap", "expensive", "luxury",
+    "fast", "quick", "convenient", "easy", "professional", "expert", "trusted", "reliable"
+  ];
+
+  const keywordSuggestions = {
+    "🍽️ Food & Beverages": ["fresh", "delicious", "authentic", "homemade", "spicy", "healthy", "organic", "discount", "combo", "special"],
+    "🍽️ Restaurants & Dining": ["tasty", "authentic", "cozy", "family", "fine dining", "casual", "buffet", "takeaway", "delivery", "fresh"],
+    "👗 Fashion & Clothing": ["trendy", "stylish", "designer", "comfortable", "premium", "sale", "new collection", "branded", "affordable", "exclusive"],
+    "📱 Electronics & Gadgets": ["latest", "smart", "high-tech", "warranty", "genuine", "fast", "portable", "wireless", "advanced", "deal"],
+    "🧴 Beauty & Wellness": ["natural", "glowing", "professional", "relaxing", "rejuvenating", "premium", "organic", "spa", "treatment", "beauty"],
+    "🏋️ Fitness & Gyms": ["strong", "healthy", "energetic", "professional", "equipment", "training", "membership", "workout", "fitness", "active"],
+    "☕ Cafes & Bakeries": ["fresh", "aromatic", "cozy", "handmade", "artisan", "specialty", "morning", "evening", "comfort", "warm"],
+    "🍿 Entertainment": ["fun", "exciting", "memorable", "family", "friends", "weekend", "special", "live", "amazing", "experience"],
+    "📚 Education & Coaching": ["expert", "certified", "professional", "learning", "skill", "career", "success", "guidance", "quality", "experienced"],
+    "✈️ Travel & Tourism": ["adventure", "scenic", "comfortable", "memorable", "package", "guided", "exotic", "relaxing", "cultural", "budget"],
+    "🏥 Health & Medicine": ["trusted", "certified", "professional", "care", "treatment", "consultation", "experienced", "reliable", "quality", "health"],
+    "🛋️ Furniture & Home Decor": ["comfortable", "stylish", "durable", "modern", "classic", "quality", "affordable", "elegant", "functional", "beautiful"],
+    "🎉 Events & Activities": ["memorable", "special", "celebration", "fun", "professional", "customized", "unique", "amazing", "perfect", "exclusive"],
+    "🛒 Grocery & Essentials": ["fresh", "quality", "daily", "essential", "convenient", "affordable", "organic", "local", "bulk", "discount"],
+    "📱 Mobile & Accessories": ["latest", "genuine", "warranty", "fast", "durable", "stylish", "protective", "wireless", "smart", "deal"],
+    "💇 Salon & Spa": ["professional", "relaxing", "beauty", "styling", "treatment", "expert", "premium", "rejuvenating", "modern", "luxury"],
+    "🎁 Gifts & Stationery": ["unique", "special", "personalized", "quality", "creative", "memorable", "beautiful", "affordable", "custom", "perfect"],
+    "🏨 Hotels & Stays": ["comfortable", "luxury", "budget", "convenient", "clean", "service", "location", "amenities", "booking", "stay"],
+    "🧘‍♂️ Yoga & Meditation": ["peaceful", "relaxing", "mindful", "spiritual", "healthy", "balance", "wellness", "calm", "inner peace", "healing"],
+    "🎤 Live Music & Nightlife": ["live", "music", "entertainment", "nightlife", "party", "drinks", "dance", "fun", "weekend", "atmosphere"],
+    "❓ Others": ["quality", "professional", "reliable", "affordable", "special", "trusted", "experienced", "convenient", "excellent", "premium"]
+  };
+
+  const getKeywordSuggestions = (category) => {
+    return keywordSuggestions[category] || keywordSuggestions["❓ Others"];
+  };
+
+  const addKeyword = (keyword) => {
+    const currentKeywords = formData.keywords ? formData.keywords.split(',').map(k => k.trim()) : [];
+    if (!currentKeywords.includes(keyword)) {
+      const newKeywords = [...currentKeywords, keyword].join(', ');
+      setFormData(prev => ({ ...prev, keywords: newKeywords }));
+    }
+  };
+
+  // Check if AI is available for content generation
+  const isAiAvailable = () => {
+    return aiAvailable.title || aiAvailable.description;
+  };
+
+  // Get keywords to display (category-specific or common fallback)
+  const getDisplayKeywords = (category) => {
+    if (isAiAvailable() && category) {
+      return getKeywordSuggestions(category);
+    }
+    return commonKeywords;
+  };
+
+  // Get the appropriate title for keyword suggestions
+  const getKeywordTitle = (category) => {
+    if (isAiAvailable() && category) {
+      return `Suggested keywords for ${category}`;
+    }
+    return "Common keywords to help describe your offer";
+  };
+
   useEffect(() => {
     const fetchLocations = async () => {
       try {
@@ -594,8 +658,59 @@ export default function OfferSubmission() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">🏷️ Keywords (Optional)</label>
-                    <input type="text" name="keywords" value={formData.keywords} onChange={handleInputChange} className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., discount, sale, premium, fresh" />
-                    <p className="text-xs text-gray-500 mt-1">Add relevant keywords to help generate better suggestions (optional)</p>
+                    <input
+                      type="text"
+                      name="keywords"
+                      value={formData.keywords}
+                      onChange={handleInputChange}
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="e.g., discount, sale, premium, fresh"
+                    />
+
+                    {/* Auto-show Keyword Suggestions - works with or without AI */}
+                    {(formData.category || !isAiAvailable()) && (
+                      <div className={`mt-3 p-4 rounded-xl border ${isAiAvailable() && formData.category
+                          ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'
+                          : 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-200'
+                        }`}>
+                        <div className="flex items-center mb-3">
+                          <span className={`mr-2 ${isAiAvailable() && formData.category ? 'text-blue-500' : 'text-gray-500'}`}>
+                            {isAiAvailable() && formData.category ? '💡' : '🏷️'}
+                          </span>
+                          <p className="text-sm font-medium text-gray-700">
+                            {getKeywordTitle(formData.category)}
+                          </p>
+                          {!isAiAvailable() && (
+                            <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                              AI Unavailable
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {getDisplayKeywords(formData.category).map((keyword, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              onClick={() => addKeyword(keyword)}
+                              className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md ${isAiAvailable() && formData.category
+                                  ? 'text-blue-700 bg-white border border-blue-300 hover:bg-blue-50 hover:border-blue-400 focus:ring-blue-500'
+                                  : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-500'
+                                }`}
+                            >
+                              {keyword}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-3 flex items-center">
+                          <span className="mr-1">ℹ️</span>
+                          {isAiAvailable() && formData.category
+                            ? 'Click any keyword to add it to your list'
+                            : 'Click any common keyword to add it to your list (AI suggestions unavailable)'}
+                        </p>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500 mt-1">Add relevant keywords to help generate better AI suggestions (optional)</p>
                   </div>
                 </div>
               </div>
