@@ -107,4 +107,4 @@ The Gemini AI integration is now ready! Your shopkeepers can:
 - Ensure consistent, professional marketing copy
 - Focus more on their business while AI handles the copywriting
 
-Happy generating! 🎉
+Happy generating! 🎉 | Test
